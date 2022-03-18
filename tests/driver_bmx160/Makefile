@@ -6,7 +6,8 @@ PORT = /dev/ttyUSB0
 DRIVER ?= bmx160_i2c
 
 USEMODULE += fmt
-USEMODULE += xtimer
+USEMODULE += ztimer
+USEMODULE += ztimer_msec
 USEMODULE += $(DRIVER)
 
 include $(RIOTBASE)/Makefile.include
