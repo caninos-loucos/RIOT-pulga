@@ -28,6 +28,14 @@ ifneq (,$(filter bme680_%,$(USEMODULE)))
   USEMODULE += bme680
 endif
 
+ifneq (,$(filter bm%160_i2c,$(USEMODULE)))
+  USEMODULE += bmx160
+endif
+
+ifneq (,$(filter bm%160_spi,$(USEMODULE)))
+  USEMODULE += bmx160
+endif
+
 ifneq (,$(filter bm%280_i2c,$(USEMODULE)))
   USEMODULE += bmx280
 endif

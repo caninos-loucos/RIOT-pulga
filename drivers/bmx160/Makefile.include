@@ -1,0 +1,8 @@
+# include variants of the BMX160 drivers as pseudo modules
+PSEUDOMODULES += bmi160_i2c
+PSEUDOMODULES += bmi160_spi
+PSEUDOMODULES += bmx160_i2c
+PSEUDOMODULES += bmx160_spi
+
+USEMODULE_INCLUDES_bmx160 := $(LAST_MAKEFILEDIR)/include
+USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_bmx160)
