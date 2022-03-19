@@ -927,7 +927,8 @@ struct bmi160_fifo_frame
     /*! Value of Skipped frame counts */
     uint8_t skipped_frame_count;
 };
-struct bmi160_dev
+// bmx160_t
+typedef struct
 {
     /*! Chip Id */
     uint8_t chip_id;
@@ -985,7 +986,7 @@ struct bmi160_dev
 
     /*! User set read/write length */
     uint16_t read_write_len;
-};
+} bmx160_t;
 
 
 /**
@@ -998,18 +999,18 @@ struct bmi160_dev
  * @return  BMX160_ERR_BUS on bus error
  * @return  BMX160_ERR_NODEV if no corresponding device was found on the bus
  */
-int bmx160_init(struct bmi160_dev *bmi);
+int bmx160_init(bmx160_t *bmi);
 
-int8_t bmi160_set_params(struct bmi160_dev *dev);
+int8_t bmi160_set_params(bmx160_t *dev);
 
-int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, struct bmi160_dev const *dev);
+int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, bmx160_t const *dev);
 
 
-int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev);
+int8_t bmi160_get_fifo_data(bmx160_t const *dev);
 
-int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, struct bmi160_dev const *dev);
+int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, bmx160_t const *dev);
 
-int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *accel_length, struct bmi160_dev const *dev);
+int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *accel_length, bmx160_t const *dev);
 
 
 #ifdef __cplusplus

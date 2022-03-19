@@ -53,7 +53,7 @@ void user_delay(uint32_t period)
  * @brief This internal API is used to validate the device structure pointer for
  * null conditions.
  */
-static int8_t null_ptr_check(const struct bmi160_dev *dev)
+static int8_t null_ptr_check(const bmx160_t *dev)
 {
     int8_t rslt;
 
@@ -74,7 +74,7 @@ static int8_t null_ptr_check(const struct bmi160_dev *dev)
  * @brief This API sets the default configuration parameters of accel & gyro.
  * Also maintain the previous state of configurations.
  */
-static void default_param_settg(struct bmi160_dev *dev)
+static void default_param_settg(bmx160_t *dev)
 {
     /* Initializing accel and gyro params with
      * default values */
@@ -98,7 +98,7 @@ static void default_param_settg(struct bmi160_dev *dev)
  * @brief This API reads the data from the given register address
  * of sensor.
  */
-int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const struct bmi160_dev *dev)
+int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const bmx160_t *dev)
 {
     int8_t rslt = BMI160_OK;
 
@@ -129,7 +129,7 @@ int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
  * @brief This API writes the given data to the register address
  * of sensor.
  */
-int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const struct bmi160_dev *dev)
+int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const bmx160_t *dev)
 {
     int8_t rslt = BMI160_OK;
     uint8_t count = 0;
@@ -188,7 +188,7 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
  * @brief This API resets and restarts the device.
  * All register values are overwritten with default parameters.
  */
-int8_t bmi160_soft_reset(struct bmi160_dev *dev)
+int8_t bmi160_soft_reset(bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t data = BMI160_SOFT_RESET_CMD;
@@ -223,7 +223,7 @@ int8_t bmi160_soft_reset(struct bmi160_dev *dev)
 /*!
  * @brief This API process the accel odr.
  */
-static int8_t process_accel_odr(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_accel_odr(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -251,7 +251,7 @@ static int8_t process_accel_odr(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API process the accel bandwidth.
  */
-static int8_t process_accel_bw(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_accel_bw(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -279,7 +279,7 @@ static int8_t process_accel_bw(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API process the accel range.
  */
-static int8_t process_accel_range(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_accel_range(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -307,7 +307,7 @@ static int8_t process_accel_range(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API check the accel configuration.
  */
-static int8_t check_accel_config(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t check_accel_config(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt;
 
@@ -332,7 +332,7 @@ static int8_t check_accel_config(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API set the accel configuration.
  */
-static int8_t set_accel_conf(struct bmi160_dev *dev)
+static int8_t set_accel_conf(bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t data[2] = { 0 };
@@ -363,7 +363,7 @@ static int8_t set_accel_conf(struct bmi160_dev *dev)
 /*!
  * @brief This API process the gyro odr.
  */
-static int8_t process_gyro_odr(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_gyro_odr(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -391,7 +391,7 @@ static int8_t process_gyro_odr(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API process the gyro bandwidth.
  */
-static int8_t process_gyro_bw(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_gyro_bw(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -416,7 +416,7 @@ static int8_t process_gyro_bw(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API process the gyro range.
  */
-static int8_t process_gyro_range(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_gyro_range(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t temp = 0;
@@ -444,7 +444,7 @@ static int8_t process_gyro_range(uint8_t *data, const struct bmi160_dev *dev)
 /*!
  * @brief This API check the gyro configuration.
  */
-static int8_t check_gyro_config(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t check_gyro_config(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt;
 
@@ -466,7 +466,7 @@ static int8_t check_gyro_config(uint8_t *data, const struct bmi160_dev *dev)
     return rslt;
 }
 
-static int8_t set_gyro_conf(struct bmi160_dev *dev)
+static int8_t set_gyro_conf(bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t data[2] = { 0 };
@@ -497,7 +497,7 @@ static int8_t set_gyro_conf(struct bmi160_dev *dev)
 /*!
  * @brief This API process the undersampling setting of Accel.
  */
-static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev)
+static int8_t process_under_sampling(uint8_t *data, const bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t temp = 0;
@@ -541,7 +541,7 @@ static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev
 /*!
  * @brief This API sets the accel power.
  */
-static int8_t set_accel_pwr(struct bmi160_dev *dev)
+static int8_t set_accel_pwr(bmx160_t *dev)
 {
     int8_t rslt = 0;
     uint8_t data = 0;
@@ -577,7 +577,7 @@ static int8_t set_accel_pwr(struct bmi160_dev *dev)
 /*!
  * @brief This API sets the gyro power mode.
  */
-static int8_t set_gyro_pwr(struct bmi160_dev *dev)
+static int8_t set_gyro_pwr(bmx160_t *dev)
 {
     int8_t rslt = 0;
 
@@ -619,7 +619,7 @@ static int8_t set_gyro_pwr(struct bmi160_dev *dev)
 /*!
  * @brief This API sets the power mode of the sensor.
  */
-int8_t bmi160_set_power_mode(struct bmi160_dev *dev)
+int8_t bmi160_set_power_mode(bmx160_t *dev)
 {
     int8_t rslt = 0;
 
@@ -644,7 +644,7 @@ int8_t bmi160_set_power_mode(struct bmi160_dev *dev)
  * @brief This API checks the invalid settings for ODR & Bw for
  * Accel and Gyro.
  */
-static int8_t check_invalid_settg(const struct bmi160_dev *dev)
+static int8_t check_invalid_settg(const bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t data = 0;
@@ -686,7 +686,7 @@ static int8_t check_invalid_settg(const struct bmi160_dev *dev)
  *  @brief This API is used to reset the FIFO related configurations
  *  in the fifo_frame structure.
  */
-static void reset_fifo_data_structure(const struct bmi160_dev *dev)
+static void reset_fifo_data_structure(const bmx160_t *dev)
 {
     /*Prepare for next FIFO read by resetting FIFO's
      * internal data structures*/
@@ -701,7 +701,7 @@ static void reset_fifo_data_structure(const struct bmi160_dev *dev)
  *  @brief This API is used to read fifo_byte_counter value (i.e)
  *  current fill-level in Fifo buffer.
  */
-static int8_t get_fifo_byte_counter(uint16_t *bytes_to_read, struct bmi160_dev const *dev)
+static int8_t get_fifo_byte_counter(uint16_t *bytes_to_read, bmx160_t const *dev)
 {
     int8_t rslt = 0;
     uint8_t data[2];
@@ -719,7 +719,7 @@ static int8_t get_fifo_byte_counter(uint16_t *bytes_to_read, struct bmi160_dev c
 /*!
  * @brief This API reads the data from fifo buffer.
  */
-int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
+int8_t bmi160_get_fifo_data(bmx160_t const *dev)
 {
     int8_t rslt = 0;
     uint16_t bytes_to_read = 0;
@@ -768,7 +768,7 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 static void get_gyro_len_to_parse(uint16_t *data_index,
                                   uint16_t *data_read_length,
                                   const uint8_t *gyro_frame_count,
-                                  const struct bmi160_dev *dev)
+                                  const bmx160_t *dev)
 {
     /* Data start index */
     *data_index = dev->fifo->gyro_byte_start_idx;
@@ -806,7 +806,7 @@ static void get_gyro_len_to_parse(uint16_t *data_index,
 /*!
  *  @brief This API checks the presence of non-valid frames in the read fifo data.
  */
-static void check_frame_validity(uint16_t *data_index, const struct bmi160_dev *dev)
+static void check_frame_validity(uint16_t *data_index, const bmx160_t *dev)
 {
     if ((*data_index + 2) < dev->fifo->length)
     {
@@ -826,7 +826,7 @@ static void check_frame_validity(uint16_t *data_index, const struct bmi160_dev *
  */
 static void unpack_gyro_data(struct bmi160_sensor_data *gyro_data,
                              uint16_t data_start_index,
-                             const struct bmi160_dev *dev)
+                             const bmx160_t *dev)
 {
     uint16_t data_lsb;
     uint16_t data_msb;
@@ -860,7 +860,7 @@ static void unpack_gyro_frame(struct bmi160_sensor_data *gyro,
                               uint16_t *idx,
                               uint8_t *gyro_idx,
                               uint8_t frame_info,
-                              const struct bmi160_dev *dev)
+                              const bmx160_t *dev)
 {
     switch (frame_info)
     {
@@ -961,7 +961,7 @@ static void unpack_gyro_frame(struct bmi160_sensor_data *gyro,
  *  @brief This API is used to parse and store the sensor time from the
  *  FIFO data in the structure instance dev.
  */
-static void unpack_sensortime_frame(uint16_t *data_index, const struct bmi160_dev *dev)
+static void unpack_sensortime_frame(uint16_t *data_index, const bmx160_t *dev)
 {
     uint32_t sensor_time_byte3 = 0;
     uint16_t sensor_time_byte2 = 0;
@@ -989,7 +989,7 @@ static void unpack_sensortime_frame(uint16_t *data_index, const struct bmi160_de
  *  @brief This API is used to parse and store the skipped_frame_count from
  *  the FIFO data in the structure instance dev.
  */
-static void unpack_skipped_frame(uint16_t *data_index, const struct bmi160_dev *dev)
+static void unpack_skipped_frame(uint16_t *data_index, const bmx160_t *dev)
 {
     /*Partial read, then move the data index to last data*/
     if (*data_index >= dev->fifo->length)
@@ -1011,7 +1011,7 @@ static void unpack_skipped_frame(uint16_t *data_index, const struct bmi160_dev *
  *  current_frame_length parameter when unnecessary FIFO data appears while
  *  extracting the user specified data.
  */
-static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, const struct bmi160_dev *dev)
+static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, const bmx160_t *dev)
 {
     /*Partial read, then move the data index to last data*/
     if ((*data_index + current_frame_length) > dev->fifo->length)
@@ -1032,7 +1032,7 @@ static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, 
  */
 static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data,
                                      uint8_t *gyro_length,
-                                     const struct bmi160_dev *dev)
+                                     const bmx160_t *dev)
 {
     uint8_t frame_header = 0;
     uint16_t data_index;
@@ -1105,7 +1105,7 @@ static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data,
  *  FIFO data read by the "bmi160_get_fifo_data" API and stores it in
  *  the "gyro_data" structure instance.
  */
-int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, struct bmi160_dev const *dev)
+int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, bmx160_t const *dev)
 {
     int8_t rslt = 0;
     uint16_t data_index = 0;
@@ -1155,7 +1155,7 @@ int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_l
 static void get_accel_len_to_parse(uint16_t *data_index,
                                    uint16_t *data_read_length,
                                    const uint8_t *acc_frame_count,
-                                   const struct bmi160_dev *dev)
+                                   const bmx160_t *dev)
 {
     /* Data start index */
     *data_index = dev->fifo->accel_byte_start_idx;
@@ -1196,7 +1196,7 @@ static void get_accel_len_to_parse(uint16_t *data_index,
  */
 static void unpack_accel_data(struct bmi160_sensor_data *accel_data,
                               uint16_t data_start_index,
-                              const struct bmi160_dev *dev)
+                              const bmx160_t *dev)
 {
     uint16_t data_lsb;
     uint16_t data_msb;
@@ -1230,7 +1230,7 @@ static void unpack_accel_frame(struct bmi160_sensor_data *acc,
                                uint16_t *idx,
                                uint8_t *acc_idx,
                                uint8_t frame_info,
-                               const struct bmi160_dev *dev)
+                               const bmx160_t *dev)
 {
     switch (frame_info)
     {
@@ -1329,7 +1329,7 @@ static void unpack_accel_frame(struct bmi160_sensor_data *acc,
  */
 static void extract_accel_header_mode(struct bmi160_sensor_data *accel_data,
                                       uint8_t *accel_length,
-                                      const struct bmi160_dev *dev)
+                                      const bmx160_t *dev)
 {
     uint8_t frame_header = 0;
     uint16_t data_index;
@@ -1402,7 +1402,7 @@ static void extract_accel_header_mode(struct bmi160_sensor_data *accel_data,
  *  FIFO data read by the "bmi160_get_fifo_data" API and stores it in
  *  the "accel_data" structure instance.
  */
-int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *accel_length, struct bmi160_dev const *dev)
+int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *accel_length, bmx160_t const *dev)
 {
     int8_t rslt = 0;
     uint16_t data_index = 0;
@@ -1456,7 +1456,7 @@ int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *acce
  * @brief This API configures the power mode, range and bandwidth
  * of sensor.
  */
-int8_t bmi160_set_params(struct bmi160_dev *dev)
+int8_t bmi160_set_params(bmx160_t *dev)
 {
     int8_t rslt = BMI160_OK;
 
@@ -1490,7 +1490,7 @@ int8_t bmi160_set_params(struct bmi160_dev *dev)
 /*!
  * @brief This API sets the FIFO configuration in the sensor.
  */
-int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, struct bmi160_dev const *dev)
+int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, bmx160_t const *dev)
 {
     int8_t rslt = 0;
     uint8_t data = 0;
@@ -1544,7 +1544,7 @@ int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, struct bmi160_dev 
     return rslt;
 }
 
-int8_t _bmi160_init(struct bmi160_dev *dev)
+int8_t _bmi160_init(bmx160_t *dev)
 {
     int8_t rslt;
     uint8_t data;
@@ -1587,7 +1587,7 @@ int8_t _bmi160_init(struct bmi160_dev *dev)
     return rslt;
 }
 
-int bmx160_init(struct bmi160_dev *bmi)
+int bmx160_init(bmx160_t *bmi)
 {
     (void) bmi;
     i2c_dev = bmi->i2c_dev;

@@ -37,8 +37,6 @@
 
 /* Variable declarations */
 
-struct bmi160_dev bmi;
-
 uint8_t fifo_buff[FIFO_SIZE];
 struct bmi160_fifo_frame fifo_frame;
 struct bmi160_sensor_data gyro_data[GYR_FRAMES], accel_data[ACC_FRAMES];
@@ -59,7 +57,7 @@ int main(void)
     ztimer_sleep(ZTIMER_MSEC, 200);
     printf("Will initialize now\n");
 
-    struct bmi160_dev bmi; // TODO: change to bmx160_t dev;
+    bmx160_t bmi; // TODO: change to bmx160_t dev;
     bmi.i2c_dev = BMX160_PARAM_I2C_DEV;
     rslt = bmx160_init(&bmi);
     if (rslt != BMI160_OK) {
