@@ -49,6 +49,13 @@ extern "C" {
 #endif
 #endif
 
+#ifndef BMX160_PARAM_ACCEL_FACTOR
+#define BMX160_PARAM_ACCEL_FACTOR 2048.0
+#endif
+#ifndef BMX160_PARAM_GYRO_FACTOR
+#define BMX160_PARAM_GYRO_FACTOR 16.4
+#endif
+
 // #define BMX160_PARAM_MISC                   \//
 //         .t_sb = BMX160_SB_0_5,              \//
 //         .filter = BMX160_FILTER_OFF,        \//

@@ -21,6 +21,7 @@
 #include "assert.h"
 #include "bmx160.h"
 #include "bmx160_internals.h"
+#include "bmx160_params.h" // FIXME: use proper cascading defaults...
 #include "ztimer.h"
 
 #define ENABLE_DEBUG        1
@@ -834,16 +835,19 @@ static void unpack_gyro_data(struct bmi160_sensor_data *gyro_data,
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     gyro_data->x = (int16_t)((data_msb << 8) | data_lsb);
+    gyro_data->x = (int16_t)(gyro_data->x / BMX160_PARAM_GYRO_FACTOR * 100);
 
     /* Gyro raw y data */
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     gyro_data->y = (int16_t)((data_msb << 8) | data_lsb);
+    gyro_data->y = (int16_t)(gyro_data->y / BMX160_PARAM_GYRO_FACTOR * 100);
 
     /* Gyro raw z data */
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     gyro_data->z = (int16_t)((data_msb << 8) | data_lsb);
+    gyro_data->z = (int16_t)(gyro_data->z / BMX160_PARAM_GYRO_FACTOR * 100);
 }
 
 /*!
@@ -1201,16 +1205,19 @@ static void unpack_accel_data(struct bmi160_sensor_data *accel_data,
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     accel_data->x = (int16_t)((data_msb << 8) | data_lsb);
+    accel_data->x = (int16_t)(accel_data->x / BMX160_PARAM_ACCEL_FACTOR * 100);
 
     /* Accel raw y data */
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     accel_data->y = (int16_t)((data_msb << 8) | data_lsb);
+    accel_data->y = (int16_t)(accel_data->y / BMX160_PARAM_ACCEL_FACTOR * 100);
 
     /* Accel raw z data */
     data_lsb = dev->fifo->data[data_start_index++];
     data_msb = dev->fifo->data[data_start_index++];
     accel_data->z = (int16_t)((data_msb << 8) | data_lsb);
+    accel_data->z = (int16_t)(accel_data->z / BMX160_PARAM_ACCEL_FACTOR * 100);
 }
 
 /*!

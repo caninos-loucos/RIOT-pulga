@@ -152,16 +152,16 @@ int main(void)
 
         for (size_t i = 0; i < acc_inst && i < gyr_inst; i++) {
             printf("Accel & gyro txyz is:     ");
-            printf("%"PRIu32" %6.2f %6.2f %6.2f    ",
+            printf("%"PRIu32" %6d %6d %6d    ",
                 accel_data[i].sensortime,
-                accel_data[i].x / AC,
-                accel_data[i].y / AC,
-                accel_data[i].z / AC);
-            printf("%"PRIu32" %6.2f %6.2f %6.2f    ",
+                accel_data[i].x,
+                accel_data[i].y,
+                accel_data[i].z);
+            printf("%"PRIu32" %6d %6d %6d    ",
                 gyro_data[i].sensortime,
-                gyro_data[i].x / GC,
-                gyro_data[i].y / GC,
-                gyro_data[i].z / GC);
+                gyro_data[i].x,
+                gyro_data[i].y,
+                gyro_data[i].z);
             printf("\n");
         }
     }
