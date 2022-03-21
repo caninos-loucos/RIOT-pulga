@@ -148,7 +148,7 @@ union bmi160_int_status
 };
 
 /*!
- * @brief bmi160 sensor data structure which comprises of accel data
+ * @brief bmi160 sensor data structure which comprises of accel and gyro data
  */
 struct bmi160_sensor_data
 {

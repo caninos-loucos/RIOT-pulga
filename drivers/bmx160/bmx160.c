@@ -708,6 +708,7 @@ static int8_t get_fifo_byte_counter(uint16_t *bytes_to_read, bmx160_t const *dev
     uint8_t addr = BMI160_FIFO_LENGTH_ADDR;
 
     rslt |= bmi160_get_regs(addr, data, 2, dev);
+    printf("data:   %2X %2X\n", data[0], data[1]);
     data[1] = data[1] & BMI160_FIFO_BYTE_COUNTER_MASK;
 
     /* Available data in FIFO is stored in bytes_to_read*/
@@ -736,6 +737,7 @@ int8_t bmi160_get_fifo_data(bmx160_t const *dev)
 
         /* get current FIFO fill-level*/
         rslt = get_fifo_byte_counter(&bytes_to_read, dev);
+        bytes_to_read = 130;
         if (rslt == BMI160_OK)
         {
             user_fifo_len = dev->fifo->length;
@@ -746,12 +748,17 @@ int8_t bmi160_get_fifo_data(bmx160_t const *dev)
                 dev->fifo->length = bytes_to_read;
             }
 
+            printf("%d + %d <= %d.   dev->fifo->length: %d\n",
+                bytes_to_read, BMI160_FIFO_BYTES_OVERREAD, user_fifo_len, dev->fifo->length);
             if ((dev->fifo->fifo_time_enable == BMI160_FIFO_TIME_ENABLE) &&
                 (bytes_to_read + BMI160_FIFO_BYTES_OVERREAD <= user_fifo_len))
             {
+                puts("  YESS");
                 /* Handling case of sensor time availability*/
                 dev->fifo->length = dev->fifo->length + BMI160_FIFO_BYTES_OVERREAD;
             }
+            printf("%d + %d <= %d.   dev->fifo->length: %d\n",
+                bytes_to_read, BMI160_FIFO_BYTES_OVERREAD, user_fifo_len, dev->fifo->length);
 
             /* read only the filled bytes in the FIFO Buffer */
             rslt = bmi160_get_regs(BMI160_FIFO_DATA_ADDR, dev->fifo->data, dev->fifo->length, dev);
@@ -1045,6 +1052,7 @@ static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data,
 
         /*Index is moved to next byte where the data is starting*/
         data_index++;
+        printf("frame_header: %2X\n", frame_header);
         switch (frame_header)
         {
             /* GYRO frame */
@@ -1601,12 +1609,12 @@ int bmx160_init(bmx160_t *bmi)
 
     int8_t rslt = _bmi160_init(bmi);
     if (rslt == BMI160_OK) {
-        DEBUG("Success initializing BMI160 - Chip ID 0x%X\n", bmi->chip_id);
+        DEBUG("[bmx160] success initializing BMI160 - Chip ID %2X\n", bmi->chip_id);
     } else if (rslt == BMI160_E_DEV_NOT_FOUND) {
-        DEBUG("Error initializing BMI160: device not found\n");
+        DEBUG("[bmx160] error initializing BMI160: device not found\n");
         return 1;
     } else {
-        DEBUG("Error initializing BMI160 - %d\n", rslt);
+        DEBUG("[bmx160] error initializing BMI160 - %d\n", rslt);
         return 1;
     }
 

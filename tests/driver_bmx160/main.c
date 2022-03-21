@@ -33,7 +33,9 @@
 /* 10 frames containing a 1 byte header, 6 bytes of accelerometer,
  * 6 bytes of gyroscope and 8 bytes of magnetometer data. This results in
  * 21 bytes per frame. Additional 40 bytes in case sensor time readout is enabled */
-#define FIFO_SIZE	250
+// #define FIFO_SIZE	250
+// #define FIFO_SIZE	13*10 + 40
+#define FIFO_SIZE	(1+6+6)*ACC_FRAMES + 40
 
 /* Variable declarations */
 
@@ -53,8 +55,8 @@ int8_t rslt;
 
 int main(void)
 {
-    printf("Will initialize in 200 msecs...\n");
-    ztimer_sleep(ZTIMER_MSEC, 200);
+    printf("Will initialize in 100 msecs...\n");
+    ztimer_sleep(ZTIMER_MSEC, 100);
     printf("Will initialize now\n");
 
     bmx160_t bmi; // TODO: change to bmx160_t dev;
@@ -109,10 +111,11 @@ int main(void)
         return 1;
     }
 
-    uint8_t fifo_config = BMI160_FIFO_HEADER |  BMI160_FIFO_ACCEL | BMI160_FIFO_GYRO;
+    uint8_t fifo_config = BMI160_FIFO_TIME | BMI160_FIFO_HEADER |  BMI160_FIFO_ACCEL | BMI160_FIFO_GYRO;
     i2c_acquire(bmi.i2c_dev);
     rslt = bmi160_set_fifo_config(fifo_config, BMI160_ENABLE, &bmi);
     i2c_release(bmi.i2c_dev);
+    printf("time: %2x\n", bmi.fifo->fifo_time_enable);
     if (rslt != BMI160_OK) {
         printf("Error enabling fifo - %d\n", rslt);
         return 1;
@@ -121,7 +124,7 @@ int main(void)
 
     while(rslt == 0) {
         /* Wait for 100ms for the FIFO to fill */
-        ztimer_sleep(ZTIMER_MSEC, 100);
+        ztimer_sleep(ZTIMER_MSEC, 50);
 
         /* It is VERY important to reload the length of the FIFO memory as after the
          * call to bmi160_get_fifo_data(), the bmi.fifo->length contains the
