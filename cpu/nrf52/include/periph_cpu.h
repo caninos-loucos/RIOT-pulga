@@ -282,7 +282,7 @@ void spi_twi_irq_register_i2c(NRF_TWIM_Type *bus,
  * @brief   Number of usable low power modes
    FIXME: not sure what is the actual number of modes (see datasheet)
  */
-#define PM_NUM_MODES            (2U)
+#define PM_NUM_MODES            (3U)
 
 /**
  * @brief USBDEV buffer instantiation requirement
