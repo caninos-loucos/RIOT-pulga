@@ -1,7 +1,6 @@
-#include "periph/pm.h"
 #include "periph_cpu.h"
-#include "pm_layered.h"
-#include "cpu_conf.h"
+#include "cpu.h"
+
 
 
 void pm_set(unsigned mode)
@@ -17,7 +16,15 @@ void pm_set(unsigned mode)
         break;
         case 2:
             //Implementar o Wait fo event sleep
-            nrf52_sleep();
+            NRF_POWER->TASKS_CONSTLAT = 0;
+            NRF_POWER->TASKS_LOWPWR = 1;
+            __DSB();
+            /* Clear Event Register */
+            __SEV();
+            /* Wait for event */
+            __WFE();
+            /* Wait for event */
+            __WFE();
         break;
     }
 }
