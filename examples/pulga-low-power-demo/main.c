@@ -25,12 +25,15 @@ static void btn_cb(void *ctx)
     (void) ctx;
     puts("BTN0 pressed!");
 }
-#endif /* MODULE_PERIPH_GPIO_IRQ */
+#endif
 
 int main(void)
 {
-    puts("Pulga Low Power!");
 
+    puts("Pulga Low Power!");
+    #ifdef MODULE_ZTIMER
+    puts("ZTIMER definido!");
+    #endif
     printf("You are running RIOT on a(n) %s board.\n", RIOT_BOARD);
     printf("This board features a(n) %s MCU.\n", RIOT_MCU);
 

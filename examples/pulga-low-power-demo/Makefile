@@ -5,11 +5,14 @@ APPLICATION = pulga-low-power-demo
 BOARD ?= native
 
 FEATURES_OPTIONAL += periph_gpio_irq
+FEATURES_OPTIONAL += periph_rtc
 
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ztimer
 USEMODULE += ztimer_msec
+USEMODULE += ztimer_usec
+USEMODULE += ztimer_sec
 
 # avoid running Kconfig by default
 SHOULD_RUN_KCONFIG ?=
