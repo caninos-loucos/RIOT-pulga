@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "my_gatt.c"
+
 #include "nimble_riot.h"
 #include "nimble_autoadv.h"
 
@@ -79,7 +81,7 @@ typedef struct {
     uint16_t dummy;
 } reading_t;
 
-#define MAX_READINGS 256
+#define MAX_READINGS 4096
 int16_t readings_bufferX[MAX_READINGS];
 int16_t readings_bufferY[MAX_READINGS];
 int16_t readings_bufferZ[MAX_READINGS];
@@ -123,230 +125,6 @@ void user_delay(uint32_t period)
 
 #define STR_ANSWER_BUFFER_SIZE 100
 
-/* UUID = 1bce38b3-d137-48ff-a13e-033e14c7a335 */
-static const ble_uuid128_t gatt_svr_svc_rw_demo_uuid
-        = BLE_UUID128_INIT(0x35, 0xa3, 0xc7, 0x14, 0x3e, 0x03, 0x3e, 0xa1, 0xff,
-                0x48, 0x37, 0xd1, 0xb3, 0x38, 0xce, 0x1b);
-
-/* UUID = 35f28386-3070-4f3b-ba38-27507e991762 */
-static const ble_uuid128_t gatt_svr_chr_rw_demo_write_uuid
-        = BLE_UUID128_INIT(0x62, 0x17, 0x99, 0x7e, 0x50, 0x27, 0x38, 0xba, 0x3b,
-                0x4f, 0x70, 0x30, 0x86, 0x83, 0xf2, 0x35);
-
-/* UUID = ccdd113f-40d5-4d68-86ac-a728dd82f4aa */
-static const ble_uuid128_t gatt_svr_chr_rw_demo_readonly_uuid
-        = BLE_UUID128_INIT(0xaa, 0xf4, 0x82, 0xdd, 0x28, 0xa7, 0xac, 0x86, 0x68,
-                0x4d, 0xd5, 0x40, 0x3f, 0x11, 0xdd, 0xcc);
-
-static char rm_demo_write_data[64] = "Get it done!";
-
-static int gatt_svr_chr_access_device_info_manufacturer(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg);
-
-static int gatt_svr_chr_access_device_info_model(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg);
-
-static int gatt_svr_chr_access_rw_demo(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg);
-
-static char str_answer[STR_ANSWER_BUFFER_SIZE];
-
-/* define several bluetooth services for our device */
-static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
-    /*
-     * access_cb defines a callback for read and write access events on
-     * given characteristics
-     */
-    {
-        /* Service: Device Information */
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = BLE_UUID16_DECLARE(GATT_DEVICE_INFO_UUID),
-        .characteristics = (struct ble_gatt_chr_def[]) { {
-            /* Characteristic: * Manufacturer name */
-            .uuid = BLE_UUID16_DECLARE(GATT_MANUFACTURER_NAME_UUID),
-            .access_cb = gatt_svr_chr_access_device_info_manufacturer,
-            .flags = BLE_GATT_CHR_F_READ,
-        }, {
-            /* Characteristic: Model number string */
-            .uuid = BLE_UUID16_DECLARE(GATT_MODEL_NUMBER_UUID),
-            .access_cb = gatt_svr_chr_access_device_info_model,
-            .flags = BLE_GATT_CHR_F_READ,
-        }, {
-            0, /* No more characteristics in this service */
-        }, }
-    },
-    {
-        /* Service: Read/Write Demo */
-        .type = BLE_GATT_SVC_TYPE_PRIMARY,
-        .uuid = (ble_uuid_t*) &gatt_svr_svc_rw_demo_uuid.u,
-        .characteristics = (struct ble_gatt_chr_def[]) { {
-            /* Characteristic: Read/Write Demo write */
-            .uuid = (ble_uuid_t*) &gatt_svr_chr_rw_demo_write_uuid.u,
-            .access_cb = gatt_svr_chr_access_rw_demo,
-            .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
-        }, {
-            /* Characteristic: Read/Write Demo read only */
-            .uuid = (ble_uuid_t*) &gatt_svr_chr_rw_demo_readonly_uuid.u,
-            .access_cb = gatt_svr_chr_access_rw_demo,
-            .flags = BLE_GATT_CHR_F_READ,
-        }, {
-            0, /* No more characteristics in this service */
-        }, }
-    },
-    {
-        0, /* No more services */
-    },
-};
-
-static int gatt_svr_chr_access_device_info_manufacturer(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-    puts("service 'device info: manufacturer' callback triggered");
-
-    (void) conn_handle;
-    (void) attr_handle;
-    (void) arg;
-
-    snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-             "This is RIOT! (Version: %s)\n", RIOT_VERSION);
-    puts(str_answer);
-
-    int rc = os_mbuf_append(ctxt->om, str_answer, strlen(str_answer));
-
-    puts("");
-
-    return rc;
-}
-
-static int gatt_svr_chr_access_device_info_model(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-    puts("service 'device info: model' callback triggered");
-
-    (void) conn_handle;
-    (void) attr_handle;
-    (void) arg;
-
-    snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-             "You are running RIOT on a(n) %s board, "
-             "which features a(n) %s MCU.", RIOT_BOARD, RIOT_MCU);
-    puts(str_answer);
-
-    int rc = os_mbuf_append(ctxt->om, str_answer, strlen(str_answer));
-
-    puts("");
-
-    return rc;
-}
-
-static int gatt_svr_chr_access_rw_demo(
-        uint16_t conn_handle, uint16_t attr_handle,
-        struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-    puts("service 'rw demo' callback triggered");
-
-    (void) conn_handle;
-    (void) attr_handle;
-    (void) arg;
-
-    int rc = 0;
-
-    ble_uuid_t* write_uuid = (ble_uuid_t*) &gatt_svr_chr_rw_demo_write_uuid.u;
-    ble_uuid_t* readonly_uuid = (ble_uuid_t*) &gatt_svr_chr_rw_demo_readonly_uuid.u;
-
-    if (ble_uuid_cmp(ctxt->chr->uuid, write_uuid) == 0) {
-
-        puts("access to characteristic 'rw demo (write)'");
-
-        switch (ctxt->op) {
-
-            case BLE_GATT_ACCESS_OP_READ_CHR:
-                puts("read from characteristic");
-                printf("current value of rm_demo_write_data: '%s'\n",
-                       rm_demo_write_data);
-
-                /* send given data to the client */
-                rc = os_mbuf_append(ctxt->om, &rm_demo_write_data,
-                                    strlen(rm_demo_write_data));
-
-                break;
-
-            case BLE_GATT_ACCESS_OP_WRITE_CHR:
-                puts("write to characteristic");
-
-                printf("old value of rm_demo_write_data: '%s'\n",
-                       rm_demo_write_data);
-
-                uint16_t om_len;
-                om_len = OS_MBUF_PKTLEN(ctxt->om);
-
-                /* read sent data */
-                rc = ble_hs_mbuf_to_flat(ctxt->om, &rm_demo_write_data,
-                                         sizeof rm_demo_write_data, &om_len);
-                /* we need to null-terminate the received string */
-                rm_demo_write_data[om_len] = '\0';
-
-                printf("new value of rm_demo_write_data: '%s'\n",
-                       rm_demo_write_data);
-
-                break;
-
-            case BLE_GATT_ACCESS_OP_READ_DSC:
-                puts("read from descriptor");
-                break;
-
-            case BLE_GATT_ACCESS_OP_WRITE_DSC:
-                puts("write to descriptor");
-                break;
-
-            default:
-                puts("unhandled operation!");
-                rc = 1;
-                break;
-        }
-
-        puts("");
-
-        return rc;
-    }
-    else if (ble_uuid_cmp(ctxt->chr->uuid, readonly_uuid) == 0) {
-
-        puts("access to characteristic 'rw demo (read-only)'");
-
-        if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR && strcmp(rm_demo_write_data, "oi") ==0 ) {
-            
-            snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-                     "Hello World!"); //A crude way to display a command recognition 
-            puts(str_answer);
-
-            rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
-
-            puts("");
-
-            return rc;
-        }
-        else{
-           snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-                     "Nope");
-            puts(str_answer);
-
-            rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer)); 
-
-            puts("");
-
-            return rc;
-        }
-        return 0;
-    }
-
-    puts("unhandled uuid!");
-    return 1;
-}
 
 int main(void)
 {
@@ -421,7 +199,9 @@ int main(void)
     /* Check rslt for any error codes */
     i2c_release(dev);
 
-    while(rslt == 0 && 0) {
+    my_gatt_start1();
+
+    while(rslt == 0 ) {
         /* Wait for 100ms for the FIFO to fill */
         user_delay(10);
 
@@ -445,33 +225,15 @@ int main(void)
             return 1;
         }
 
-        
+    
 
         read_and_show_Acc_values();
 
     }
 
-    int lenki = sprintf(rm_demo_write_data, "%f, %f, %f", (accel_data[1].x / AC), (accel_data[1].y /AC), (accel_data[1].z /AC));
-    printf("%d \n", lenki);
+    //int lenki = sprintf(rm_demo_write_data, "%f, %f, %f", (accel_data[1].x / AC), (accel_data[1].y /AC), (accel_data[1].z /AC));
+    //printf("%d \n", lenki);
 
-    puts("NimBLE GATT Server Example");
-
-    int rc = 0;
-    (void)rc;
-
-    /* verify and add our custom services */
-    rc = ble_gatts_count_cfg(gatt_svr_svcs);
-    assert(rc == 0);
-    rc = ble_gatts_add_svcs(gatt_svr_svcs);
-    assert(rc == 0);
-
-    /* set the device name */
-    ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
-    /* reload the GATT server to link our added services */
-    ble_gatts_start();
-
-    /* start to advertise this node */
-    nimble_autoadv_start();
 
     return 0;
 }
@@ -489,13 +251,9 @@ void right_shift_readings_buffer(void)
 
 void do_read(void)
 {
-    //int16_t readingX[ACC_FRAMES];
-    //readingX[0] = accel_data->x;
-    //reading_t readingY = get_readingY();
-    //reading_t readingZ = get_readingZ();
-//#ifdef PULGA_USE_RINGBUFFER
-  //  right_shift_readings_buffer();
-//#endif
+#ifdef PULGA_USE_RINGBUFFER
+    right_shift_readings_buffer();
+#endif
     for(size_t i=0; i<ACC_FRAMES; i++){
         readings_bufferX[i] = accel_data[i].x;
         readings_bufferY[i] = accel_data[i].y;
@@ -505,28 +263,28 @@ void do_read(void)
 
 void log_readings(void)
 {
-//#ifdef PULGA_USE_RINGBUFFER
-    /*for (size_t i = 0; i < rlen; i++) {
+#ifdef PULGA_USE_RINGBUFFER
+    for (size_t i = 0; i < rlen; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
         printf("Acc_y: %f ", ((float)readings_bufferY[i])/ AC);
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
-        printf("\n");
-    }*/
-//#else
+        printf("\n %c", 13);
+    }
+#else
     for (size_t i = 0; i < ACC_FRAMES; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
         printf("Acc_y: %f ", ((float)readings_bufferY[i])/ AC);
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
-        printf("\n");
+        printf("\n %c", 13);
     }
-//#endif
+#endif
 }
 void read_and_show_Acc_values(void)
 {
     do_read();
 //#if(LOG_LEVEL==4)
-    log_readings();
+//    log_readings();
 //#endif
 }
