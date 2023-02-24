@@ -85,6 +85,8 @@ int16_t readings_bufferY[MAX_READINGS];
 int16_t readings_bufferZ[MAX_READINGS];
 size_t rlen = 0;
 
+void init_BMI160(void);
+void BMI_loop(uint16_t cont);
 reading_t get_reading(void);
 void right_shift_readings_buffer(void);
 void do_read(void);
@@ -138,7 +140,7 @@ static const ble_uuid128_t gatt_svr_chr_rw_demo_readonly_uuid
         = BLE_UUID128_INIT(0xaa, 0xf4, 0x82, 0xdd, 0x28, 0xa7, 0xac, 0x86, 0x68,
                 0x4d, 0xd5, 0x40, 0x3f, 0x11, 0xdd, 0xcc);
 
-static char rm_demo_write_data[64] = "Get it done!";
+char rm_demo_write_data[100] = "Get it done!";
 
 static int gatt_svr_chr_access_device_info_manufacturer(
         uint16_t conn_handle, uint16_t attr_handle,
@@ -321,7 +323,7 @@ static int gatt_svr_chr_access_rw_demo(
         if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR && strcmp(rm_demo_write_data, "oi") ==0 ) {
             
             snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-                     "Hello World!"); //A crude way to display a command recognition 
+                     rm_demo_write_data); //A crude way to display a command recognition 
             puts(str_answer);
 
             rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
@@ -351,8 +353,68 @@ static int gatt_svr_chr_access_rw_demo(
 int main(void)
 {
 
+    /*uint16_t cont = 10;
     (void) puts("Welcome to RIOT!");
 
+    init_BMI160();
+    BMI_loop(cont);*/
+
+    //int lenki = sprintf(rm_demo_write_data, "%f, %f, %f", (accel_data[1].x / AC), (accel_data[1].y /AC), (accel_data[1].z /AC));
+    //printf("%d \n", lenki);
+    
+    puts("NimBLE GATT Server Example");
+
+    int rc = 0;
+    (void)rc;
+
+    /* verify and add our custom services */
+    rc = ble_gatts_count_cfg(gatt_svr_svcs);
+    assert(rc == 0);
+    rc = ble_gatts_add_svcs(gatt_svr_svcs);
+    assert(rc == 0);
+
+    /* set the device name */
+    ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
+    /* reload the GATT server to link our added services */
+    ble_gatts_start();
+    
+    /* start to advertise this node */
+    nimble_autoadv_start();
+
+    return 0;
+}
+
+void BMI_loop(uint16_t cont){
+    uint16_t aux=0;
+    while(rslt == 0 && (aux < cont)) {
+        /* Wait for 100ms for the FIFO to fill */
+        user_delay(10);
+
+        /* It is VERY important to reload the length of the FIFO memory as after the
+         * call to bmi160_get_fifo_data(), the bmi.fifo->length contains the
+         * number of bytes read from the FIFO */
+        bmi.fifo->length = FIFO_SIZE;
+        i2c_acquire(dev);
+        rslt = bmi160_get_fifo_data(&bmi);
+        if (rslt != BMI160_OK) {
+            printf("Error getting fifo data - %d\n", rslt);
+            return ;
+        }
+        i2c_release(dev);
+
+        uint8_t acc_inst = ACC_FRAMES;
+
+        rslt = bmi160_extract_accel(accel_data, &acc_inst, &bmi);
+        if (rslt != BMI160_OK) {
+            printf("Error extracting accel data - %d\n", rslt);
+            return ;
+        }
+        aux++;
+        //read_and_show_Acc_values();
+    }
+}
+
+void init_BMI160(void){
     i2c_init(dev);
     i2c_acquire(dev);
     
@@ -370,10 +432,10 @@ int main(void)
         printf("Success initializing BMI160 - Chip ID 0x%X\n", bmi.chip_id);
     } else if (rslt == BMI160_E_DEV_NOT_FOUND) {
         printf("Error initializing BMI160: device not found\n");
-        return 1;
+        return ;
     } else {
         printf("Error initializing BMI160 - %d\n", rslt);
-        return 1;
+        return ;
     }
 
     /* Select the Output data rate, range of accelerometer sensor */
@@ -398,7 +460,7 @@ int main(void)
     rslt = bmi160_set_sens_conf(&bmi);
     if (rslt != BMI160_OK) {
         printf("Error configuring BMI160 - %d\n", rslt);
-        return 1;
+        return ;
     }
 
     /* Link the FIFO memory location */
@@ -409,73 +471,18 @@ int main(void)
     rslt = bmi160_set_fifo_config(BMI160_FIFO_CONFIG_1_MASK , BMI160_DISABLE, &bmi);
     if (rslt != BMI160_OK) {
         printf("Error clearing fifo - %d\n", rslt);
-        return 1;
+        return ;
     }
 
     uint8_t fifo_config = BMI160_FIFO_HEADER |  BMI160_FIFO_ACCEL | BMI160_FIFO_GYRO;
     rslt = bmi160_set_fifo_config(fifo_config, BMI160_ENABLE, &bmi);
     if (rslt != BMI160_OK) {
         printf("Error enabling fifo - %d\n", rslt);
-        return 1;
+        return ;
     }
     /* Check rslt for any error codes */
     i2c_release(dev);
-
-    while(rslt == 0 && 0) {
-        /* Wait for 100ms for the FIFO to fill */
-        user_delay(10);
-
-        /* It is VERY important to reload the length of the FIFO memory as after the
-         * call to bmi160_get_fifo_data(), the bmi.fifo->length contains the
-         * number of bytes read from the FIFO */
-        bmi.fifo->length = FIFO_SIZE;
-        i2c_acquire(dev);
-        rslt = bmi160_get_fifo_data(&bmi);
-        if (rslt != BMI160_OK) {
-            printf("Error getting fifo data - %d\n", rslt);
-            return 1;
-        }
-        i2c_release(dev);
-
-        uint8_t acc_inst = ACC_FRAMES;
-
-        rslt = bmi160_extract_accel(accel_data, &acc_inst, &bmi);
-        if (rslt != BMI160_OK) {
-            printf("Error extracting accel data - %d\n", rslt);
-            return 1;
-        }
-
-        
-
-        read_and_show_Acc_values();
-
-    }
-
-    int lenki = sprintf(rm_demo_write_data, "%f, %f, %f", (accel_data[1].x / AC), (accel_data[1].y /AC), (accel_data[1].z /AC));
-    printf("%d \n", lenki);
-
-    puts("NimBLE GATT Server Example");
-
-    int rc = 0;
-    (void)rc;
-
-    /* verify and add our custom services */
-    rc = ble_gatts_count_cfg(gatt_svr_svcs);
-    assert(rc == 0);
-    rc = ble_gatts_add_svcs(gatt_svr_svcs);
-    assert(rc == 0);
-
-    /* set the device name */
-    ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
-    /* reload the GATT server to link our added services */
-    ble_gatts_start();
-
-    /* start to advertise this node */
-    nimble_autoadv_start();
-
-    return 0;
 }
-
 
 void right_shift_readings_buffer(void)
 {
@@ -489,12 +496,8 @@ void right_shift_readings_buffer(void)
 
 void do_read(void)
 {
-    //int16_t readingX[ACC_FRAMES];
-    //readingX[0] = accel_data->x;
-    //reading_t readingY = get_readingY();
-    //reading_t readingZ = get_readingZ();
 //#ifdef PULGA_USE_RINGBUFFER
-  //  right_shift_readings_buffer();
+    right_shift_readings_buffer();
 //#endif
     for(size_t i=0; i<ACC_FRAMES; i++){
         readings_bufferX[i] = accel_data[i].x;
@@ -506,14 +509,14 @@ void do_read(void)
 void log_readings(void)
 {
 //#ifdef PULGA_USE_RINGBUFFER
-    /*for (size_t i = 0; i < rlen; i++) {
+    for (size_t i = 0; i < rlen; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
         printf("Acc_y: %f ", ((float)readings_bufferY[i])/ AC);
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
         printf("\n");
-    }*/
-//#else
+    }
+/*#else
     for (size_t i = 0; i < ACC_FRAMES; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
@@ -521,7 +524,7 @@ void log_readings(void)
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
         printf("\n");
     }
-//#endif
+//#endif*/
 }
 void read_and_show_Acc_values(void)
 {
