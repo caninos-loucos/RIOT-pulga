@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "my_gatt.c"
+
 #include "nimble_riot.h"
 #include "nimble_autoadv.h"
 
@@ -79,7 +81,7 @@ typedef struct {
     uint16_t dummy;
 } reading_t;
 
-#define MAX_READINGS 256
+#define MAX_READINGS 4096
 int16_t readings_bufferX[MAX_READINGS];
 int16_t readings_bufferY[MAX_READINGS];
 int16_t readings_bufferZ[MAX_READINGS];
@@ -125,6 +127,7 @@ void user_delay(uint32_t period)
 
 #define STR_ANSWER_BUFFER_SIZE 100
 
+<<<<<<< HEAD
 /* UUID = 1bce38b3-d137-48ff-a13e-033e14c7a335 */
 static const ble_uuid128_t gatt_svr_svc_rw_demo_uuid
         = BLE_UUID128_INIT(0x35, 0xa3, 0xc7, 0x14, 0x3e, 0x03, 0x3e, 0xa1, 0xff,
@@ -349,6 +352,8 @@ static int gatt_svr_chr_access_rw_demo(
     puts("unhandled uuid!");
     return 1;
 }
+=======
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
 
 int main(void)
 {
@@ -482,6 +487,47 @@ void init_BMI160(void){
     }
     /* Check rslt for any error codes */
     i2c_release(dev);
+<<<<<<< HEAD
+=======
+
+    my_gatt_start1();
+
+    while(rslt == 0 ) {
+        /* Wait for 100ms for the FIFO to fill */
+        user_delay(10);
+
+        /* It is VERY important to reload the length of the FIFO memory as after the
+         * call to bmi160_get_fifo_data(), the bmi.fifo->length contains the
+         * number of bytes read from the FIFO */
+        bmi.fifo->length = FIFO_SIZE;
+        i2c_acquire(dev);
+        rslt = bmi160_get_fifo_data(&bmi);
+        if (rslt != BMI160_OK) {
+            printf("Error getting fifo data - %d\n", rslt);
+            return 1;
+        }
+        i2c_release(dev);
+
+        uint8_t acc_inst = ACC_FRAMES;
+
+        rslt = bmi160_extract_accel(accel_data, &acc_inst, &bmi);
+        if (rslt != BMI160_OK) {
+            printf("Error extracting accel data - %d\n", rslt);
+            return 1;
+        }
+
+    
+
+        read_and_show_Acc_values();
+
+    }
+
+    //int lenki = sprintf(rm_demo_write_data, "%f, %f, %f", (accel_data[1].x / AC), (accel_data[1].y /AC), (accel_data[1].z /AC));
+    //printf("%d \n", lenki);
+
+
+    return 0;
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
 }
 
 void right_shift_readings_buffer(void)
@@ -496,9 +542,15 @@ void right_shift_readings_buffer(void)
 
 void do_read(void)
 {
+<<<<<<< HEAD
 //#ifdef PULGA_USE_RINGBUFFER
     right_shift_readings_buffer();
 //#endif
+=======
+#ifdef PULGA_USE_RINGBUFFER
+    right_shift_readings_buffer();
+#endif
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
     for(size_t i=0; i<ACC_FRAMES; i++){
         readings_bufferX[i] = accel_data[i].x;
         readings_bufferY[i] = accel_data[i].y;
@@ -508,28 +560,42 @@ void do_read(void)
 
 void log_readings(void)
 {
+<<<<<<< HEAD
 //#ifdef PULGA_USE_RINGBUFFER
+=======
+#ifdef PULGA_USE_RINGBUFFER
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
     for (size_t i = 0; i < rlen; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
         printf("Acc_y: %f ", ((float)readings_bufferY[i])/ AC);
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
+<<<<<<< HEAD
         printf("\n");
     }
 /*#else
+=======
+        printf("\n %c", 13);
+    }
+#else
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
     for (size_t i = 0; i < ACC_FRAMES; i++) {
         printf("[Acc_readings] readings_buffer[%d]: ", i);
         printf("Acc_x: %f ", ((float)readings_bufferX[i])/ AC);
         printf("Acc_y: %f ", ((float)readings_bufferY[i])/ AC);
         printf("Acc_z: %f ", ((float)readings_bufferZ[i])/ AC);
-        printf("\n");
+        printf("\n %c", 13);
     }
+<<<<<<< HEAD
 //#endif*/
+=======
+#endif
+>>>>>>> 8a95d4d853244333bc9b5289be898dc279e0b93e
 }
 void read_and_show_Acc_values(void)
 {
     do_read();
 //#if(LOG_LEVEL==4)
-    log_readings();
+//    log_readings();
 //#endif
 }
