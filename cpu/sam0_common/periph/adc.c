@@ -238,8 +238,10 @@ int adc_init(adc_t line)
     }
 
     _prep();
-    gpio_init(adc_channels[line].pin, GPIO_IN);
-    gpio_init_mux(adc_channels[line].pin, GPIO_MUX_B);
+    printf("passou por aqui\n\r");
+    while(1);
+    gpio_init(GPIO_PIN(0,31), GPIO_IN);
+    gpio_init_mux(GPIO_PIN(0,31), GPIO_MUX_B);
     _done();
 
     return 0;

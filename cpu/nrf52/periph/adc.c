@@ -76,7 +76,6 @@ int adc_init(adc_t line)
     }
 
     prep();
-
     /* prevent multiple initialization by checking the result ptr register */
     if (NRF_SAADC->RESULT.PTR != (uint32_t)&result) {
         /* set data pointer and the single channel we want to convert */
@@ -91,7 +90,7 @@ int adc_init(adc_t line)
         NRF_SAADC->CH[0].CONFIG = ((ADC_GAIN << SAADC_CH_CONFIG_GAIN_Pos) |
                                    (ADC_REF << SAADC_CH_CONFIG_REFSEL_Pos) |
                                    (ADC_TACQ << SAADC_CH_CONFIG_TACQ_Pos));
-        NRF_SAADC->CH[0].PSELN = SAADC_CH_PSELN_PSELN_NC;
+        NRF_SAADC->CH[0].PSELN = GPIO_PIN(0,31);
         NRF_SAADC->OVERSAMPLE = SAADC_OVERSAMPLE_OVERSAMPLE_Bypass;
 
         /* calibrate SAADC */
