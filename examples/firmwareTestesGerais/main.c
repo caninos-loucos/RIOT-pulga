@@ -63,6 +63,27 @@
 #include "board.h"
 #include "periph/adc.h"
 
+// includes GPS
+
+#include "shell.h"
+
+#include "ringbuffer.h"
+#include "periph/uart.h"
+#include "minmea.h"
+
+#define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
+#define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
+
+#define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN - 1)
+static kernel_pid_t gps_handler_pid;
+static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
+
+#ifndef UART_BUFSIZE
+#define UART_BUFSIZE        (128U)
+#endif
+
+// fim includes GPS
+
 /* Helper macro to define _si1133_strerr */
 #define CASE_SI1133_ERROR_STRING(X)                                            \
     case X:                                                                    \
