@@ -952,6 +952,24 @@ int main(void)
     puts("LoRaWAN Class A low-power application");
     puts("=====================================");
 
+    // Implementação GPS
+
+    init_gps();
+
+    /* initialize ringbuffer */
+    ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
+
+    /* start the gps_handler thread */
+    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
+                                GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
+
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
+    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    // Fim implementação GPS
+
+
+
     /* Convert identifiers and application key */
     fmt_hex_bytes(deveui, CONFIG_LORAMAC_DEV_EUI_DEFAULT);
     fmt_hex_bytes(appeui, CONFIG_LORAMAC_APP_EUI_DEFAULT);
