@@ -74,7 +74,7 @@
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
 
-#define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN - 1)
+#define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN + 2)
 static kernel_pid_t gps_handler_pid;
 static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 
@@ -741,6 +741,22 @@ int main(void)
     puts("This test will sample all available ADC lines once every 100ms with\n"
          "a 10-bit resolution and print the sampled results to STDIO\n\n");
 
+    // Implementação GPS
+
+    init_gps();
+    
+    /* initialize ringbuffer */
+    ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
+
+    /* start the gps_handler thread */
+    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
+                                GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
+    
+    //char line_buf[SHELL_DEFAULT_BUFSIZE];
+    //shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+    printf("Chegou printf\n\r");
+    // Fim implementação GPS
+
     /* initialize all available ADC lines */
     for (unsigned i = 0; i < ADC_NUMOF; i++) {
         if (adc_init(ADC_LINE(7)) < 0) {
@@ -951,24 +967,6 @@ int main(void)
 
     puts("LoRaWAN Class A low-power application");
     puts("=====================================");
-
-    // Implementação GPS
-
-    init_gps();
-
-    /* initialize ringbuffer */
-    ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
-
-    /* start the gps_handler thread */
-    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
-                                GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
-
-    char line_buf[SHELL_DEFAULT_BUFSIZE];
-    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
-
-    // Fim implementação GPS
-
-
 
     /* Convert identifiers and application key */
     fmt_hex_bytes(deveui, CONFIG_LORAMAC_DEV_EUI_DEFAULT);
