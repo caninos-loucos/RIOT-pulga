@@ -63,8 +63,6 @@
 #include "board.h"
 #include "periph/adc.h"
 
-// includes GPS
-
 #include "shell.h"
 
 #include "ringbuffer.h"
@@ -74,7 +72,7 @@
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
 
-#define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN + 2)
+#define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN - 1)
 static kernel_pid_t gps_handler_pid;
 static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 
@@ -82,7 +80,10 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 #define UART_BUFSIZE        (128U)
 #endif
 
-// fim includes GPS
+/* Get GPS readings */
+float latitude = 0;
+float longitude = 0;
+float speed = 0;
 
 /* Helper macro to define _si1133_strerr */
 #define CASE_SI1133_ERROR_STRING(X)                                            \
@@ -117,7 +118,8 @@ static const char *_si1133_strerr(si1133_ret_code_t err)
 static si1133_t devSI;
 int32_t valuesSI11[3];
 
-#define UPDATE_INTERVAL         (250U) /* tempo do update do BLE */
+/* BLLE update interval */
+#define UPDATE_INTERVAL         (250U) 
 
 static const char *_manufacturer_name = "Unfit Byte Inc.";
 static const char *_model_number = "2A";
@@ -147,13 +149,10 @@ scd30_measurement_t result;
 
 static uint16_t _conn_handle;
 static uint16_t _hrs_val_handle;
-//static uint16_t _sensor_handle;
 #define RES             ADC_RES_10BIT
 #define DELAY_MS        100U
 
 char sensor_measurements[100];
-//#define STR_ANSWER_BUFFER_SIZE 4096
-
 
 static int _devinfo_handler(uint16_t conn_handle, uint16_t attr_handle,
                             struct ble_gatt_access_ctxt *ctxt, void *arg);
@@ -174,8 +173,6 @@ static int send_latest_measurements(
 
     return rc;
 }
-
-//static char str_answer[STR_ANSWER_BUFFER_SIZE];
 
 static void _start_updating(void);
 static void _stop_updating(void);
@@ -378,8 +375,14 @@ static void _hr_update(event_t *e)
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t), &uv, sizeof(uint32_t));
     int sampleADC = adc_sample(ADC_LINE(7), RES);
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t), &sampleADC, sizeof(uint32_t));
+    memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
+           + sizeof(float), &latitude, sizeof(float));
+    memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
+           + sizeof(float) + sizeof(float), &longitude, sizeof(float));
+    memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
+           + sizeof(float) + sizeof(float) + sizeof(float), &speed, sizeof(float));
     
-    /* send heart rate data notification to GATT client */
+    /* Send heart rate data notification to GATT client */
     om = ble_hs_mbuf_from_flat(sensor_measurements, sizeof(sensor_measurements));
     assert(om != NULL);
     int res = ble_gattc_notify_custom(_conn_handle, _hrs_val_handle, om);
@@ -393,8 +396,11 @@ static void _hr_update(event_t *e)
     printf("   Luminosidade [lux]:    %lu\n\r", lum);
     printf("   UV [lux]:              %lu\n\r", uv);
     printf("   Battery     [V]:       %d\n\r",  sampleADC);
+    printf("   Latitude     [Dec]:       %f\n\r",  latitude);
+    printf("   Longitude     [Dec]:       %f\n\r",  longitude);
+    printf("   Speed     [m/s]:       %f\n\r",  speed);
 
-    /* schedule next update event */
+    /* Schedule next update event */
     event_timeout_set(&_update_timeout_evt, UPDATE_INTERVAL);
 
 }
@@ -428,7 +434,7 @@ static int gatt_svr_chr_access_rw_demo(
             printf("current value of rm_demo_write_data: '%s'\n \r",
                    rm_demo_write_data);
 
-            /* send given data to the client */
+            /* Send given data to the client */
             rc = os_mbuf_append(ctxt->om, &rm_demo_write_data,
                                 strlen(rm_demo_write_data));
 
@@ -443,10 +449,10 @@ static int gatt_svr_chr_access_rw_demo(
             uint16_t om_len;
             om_len = OS_MBUF_PKTLEN(ctxt->om);
 
-            /* read sent data */
+            /* Read sent data */
             rc = ble_hs_mbuf_to_flat(ctxt->om, &rm_demo_write_data,
                                      sizeof rm_demo_write_data, &om_len);
-            /* we need to null-terminate the received string */
+            /* We need to null-terminate the received string */
             rm_demo_write_data[om_len] = '\0';
 
             printf("new value of rm_demo_write_data: '%s'\n \r",
@@ -493,7 +499,6 @@ static int gatt_svr_chr_access_rw_demo(
             sender_pid = thread_create(sender_stack, sizeof(sender_stack),
                                SENDER_PRIO, 0, sender, NULL, "sender");
 
-            //_send_message();
             msg_t msg;
             msg_send(&msg, sender_pid); 
             
@@ -503,24 +508,8 @@ static int gatt_svr_chr_access_rw_demo(
         {
             printf("entrou na ri\n\r");
             sender_pid = KERNEL_PID_UNDEF;
-            // rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
-
-            // puts("");
-
-            // return rc;
         }
-        else
-        {
-            // snprintf(str_answer, STR_ANSWER_BUFFER_SIZE,
-            //          "No data available");
-            // puts(str_answer);
 
-            // rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
-
-            // puts("");
-
-            // return rc;
-        }
         return 0;
     }
 
@@ -538,7 +527,6 @@ static ztimer_t timer;
 
 static bmx280_t dev;
 
-//static const char *message = "123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_";
 char message[100];
 
 static uint8_t deveui[LORAMAC_DEVEUI_LEN];
@@ -570,24 +558,28 @@ static void _send_message(void)
     scd30_read_triggered(&scd30_dev, &result);
     si1133_capture_sensors(&devSI, valuesSI11, ARRAY_SIZE(valuesSI11));
     int sampleADC = adc_sample(ADC_LINE(7), RES);
+    float lora_lat = latitude;
+    float lora_long = longitude;
+    float lora_speed = speed; 
 
-    // Alocar memória para o array de caracteres (char*) e +1 para o caractere nulo \0
+    /* Allocates memory for the characters array (char*) with  +1 for null character \0 */
     char* char_array = (char*)malloc(70* sizeof(char));
     result.co2_concentration *= 100;
 
-    // Copiar o valor do int16_t para o char_array
-    snprintf(char_array,71, "%d;%lu;%d;%d;%lu;%lu;%d", temperature, pressure, humidity,(int)(result.co2_concentration), valuesSI11[1], valuesSI11[2], sampleADC);
+    /* Copies int16_t value to char_array */
+    snprintf(char_array,77, "%d;%lu;%d;%d;%lu;%lu;%d;%f;%f;%f", temperature, pressure, humidity,(int)(result.co2_concentration), valuesSI11[1], valuesSI11[2], sampleADC
+                                                              , lora_lat, lora_long, lora_speed);
     
-    // Utilize essa etapa se o valor for negativo para manter o sinal (-) no início do char_array
+    /* Keeps the negative signal (-) at the char_array beggining when temperature is negative */ 
     if (temperature < 0) {
         memmove(char_array + 1, char_array, 6);
         char_array[0] = '-';
     }
 
-    // Vetor de destino (char*)
+    /* Destination vector (char*) */ 
     char* destination = (char*)malloc(70 * sizeof(char));
 
-    // Copiar o char_array para o destination usando strcpy (ou strncpy)
+    /* Copies char_array to destination */ 
     strcpy(destination, char_array);
 
     /* Try to send the message */
@@ -624,8 +616,6 @@ static void *sender(void *arg)
     /* this should never be reached */
     return NULL;
 }
-
-// Funcoes do GPS
 
 typedef struct {
     char rx_mem[UART_BUFSIZE];
@@ -664,8 +654,7 @@ static void *gps_handler(void *arg)
             c = (char)ringbuffer_get_one(&(ctx.rx_buf));
             if (c == '\n') {
                 line[pos++] = c;
-		pos = 0;
-                //printf("Will parse line of sentence id %d: %s\n", minmea_sentence_id(line, false), line);
+		        pos = 0;
                 switch (minmea_sentence_id(line, false)) {
                     case MINMEA_SENTENCE_RMC: {
                         struct minmea_sentence_rmc frame;
@@ -674,6 +663,11 @@ static void *gps_handler(void *arg)
                                     minmea_tocoord(&frame.latitude),
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
+
+                                    latitude = minmea_tocoord(&frame.latitude);
+                                    longitude = minmea_tocoord(&frame.longitude);
+                                    speed = minmea_tofloat(&frame.speed);
+
                         } else {
                             puts("Could not parse $RMC message. Possibly incomplete");
                         }
@@ -708,13 +702,13 @@ static void *gps_handler(void *arg)
         } while (c != '\n');
     }
 
-    /* this should never be reached */
+    /* This should never be reached */
     return NULL;
 }
 
 int init_gps(void)
 {
-    /* initialize UART */
+    /* Initialize UART */
     int dev = 1;
     uint32_t baud = 9600;
 
@@ -725,14 +719,12 @@ int init_gps(void)
     }
     printf("Success: Initialized UART_DEV(%i) at BAUD %"PRIu32"\n", dev, baud);
 
-    /* tell gps chip to wake up */
+    /* Tell gps chip to wake up */
     uart_write(UART_DEV(dev), (uint8_t *)PMTK_SET_NMEA_OUTPUT_RMC, strlen(PMTK_SET_NMEA_OUTPUT_RMC));
     uart_write(UART_DEV(dev), (uint8_t *)PMTK_SET_UPDATE_F_2HZ, strlen(PMTK_SET_UPDATE_F_2HZ));
     puts("GPS Started.");
     return 0;
 }
-
-// Fim das funcoes do GPS
 
 int main(void)
 {
@@ -741,23 +733,16 @@ int main(void)
     puts("This test will sample all available ADC lines once every 100ms with\n"
          "a 10-bit resolution and print the sampled results to STDIO\n\n");
 
-    // Implementação GPS
-
     init_gps();
     
-    /* initialize ringbuffer */
+    /* Initialize ringbuffer */
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
 
-    /* start the gps_handler thread */
+    /* Start the gps_handler thread */
     gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
-                                GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
-    
-    //char line_buf[SHELL_DEFAULT_BUFSIZE];
-    //shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
-    printf("Chegou printf\n\r");
-    // Fim implementação GPS
+                               GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
 
-    /* initialize all available ADC lines */
+    /* Initialize all available ADC lines */
     for (unsigned i = 0; i < ADC_NUMOF; i++) {
         if (adc_init(ADC_LINE(7)) < 0) {
             printf("Initialization of ADC_LINE(%u) failed\n", 7);
@@ -766,29 +751,6 @@ int main(void)
             printf("Successfully initialized ADC_LINE(%u)\n", 7);
         }
     }
-
-    // while (1) {
-    //     for (unsigned i = 0; i < ADC_NUMOF; i++) {
-    //         sampleADC = adc_sample(ADC_LINE(7), RES); //descobrir por que apenas o canal 7 está a mostra, no driver está o canal 0
-    //         //if (sample > 500) {
-    //             //printf("ADC_LINE(%u): selected resolution not applicable\n", i);
-    //             printf("ADC_LINE(%u): %f\n", 7, (3.3/1024)*sample);
-    //         //}
-    //     }
-    //     ztimer_sleep(ZTIMER_MSEC, DELAY_MS);
-    // }
-
-    // gpio_t loraReset = GPIO_PIN(1,15);
-    // gpio_init(loraReset, GPIO_OUT);
-    
-    
-    // while(1){
-    //     gpio_set(loraReset);
-    //     xtimer_sleep(5);
-    //     gpio_clear(loraReset);
-    //     xtimer_sleep(5);
-    //     printf("toggle\n\r");
-    // }
 
     uint32_t failures = 0;
 
@@ -955,12 +917,12 @@ int main(void)
     switch (bmx280_init(&dev, &bmx280_params[0])) {
         case BMX280_ERR_BUS:
             puts("[Error] Something went wrong when using the I2C bus");
-            return 1;
+            break; 
         case BMX280_ERR_NODEV:
             puts("[Error] Unable to communicate with any BMX280 device");
-            return 1;
+            break; 
         default:
-            /* all good -> do nothing */
+            /* All good -> do nothing */
             printf("BME280 initialized\n");
             break;
     }
@@ -1005,31 +967,25 @@ int main(void)
     }
     puts("Join procedure succeeded");
 
-    /* trigger the first send */
-    //msg_t msg;
-    //msg_send(&msg, sender_pid);
-
-    //char line_buf[SHELL_DEFAULT_BUFSIZE]; shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
-
     printf("Nimble GATT application\n\r");
 
     int res = 0;
     (void)res;
 
-    /* setup local event queue (for handling heart rate updates) */
+    /* Setup local event queue (for handling heart rate updates) */
     event_queue_init(&_eq);
     _update_evt.handler = _hr_update;
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq, &_update_evt);
 
-    /* verify and add our custom services */
+    /* Verify and add our custom services */
     res = ble_gatts_count_cfg(gatt_svr_svcs);
     assert(res == 0);
     res = ble_gatts_add_svcs(gatt_svr_svcs);
     assert(res == 0);
 
-    /* set the device name */
+    /* Set the device name */
     ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
-    /* reload the GATT server to link our added services */
+    /* Reload the GATT server to link our added services */
     ble_gatts_start();
 
     struct ble_gap_adv_params advp;
@@ -1041,19 +997,18 @@ int main(void)
     
     advp.itvl_max  = BLE_GAP_ADV_FAST_INTERVAL1_MAX;
 
-    /* set advertise params */
+    /* Set advertise params */
     nimble_autoadv_set_ble_gap_adv_params(&advp);
 
-    /* configure and set the advertising data */
-    //uint16_t hrs_uuid = BLE_GATT_SVC_ESS;
+    /* Configure and set the advertising data */
     nimble_autoadv_add_field(BLE_GAP_AD_UUID16_INCOMP, &latest_mesurement_uuid, sizeof(latest_mesurement_uuid));
 
     nimble_auto_adv_set_gap_cb(&gap_event_cb, NULL);
 
-    /* start to advertise this node */
+    /* Start to advertise this node */
     nimble_autoadv_start();
 
-    /* run an event loop for handling the heart rate update events */
+    /* Run an event loop for handling the heart rate update events */
     event_loop(&_eq);
 
     return 0;
