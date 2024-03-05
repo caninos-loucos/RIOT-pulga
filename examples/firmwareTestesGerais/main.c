@@ -69,6 +69,8 @@
 #include "periph/uart.h"
 #include "minmea.h"
 
+#include "led.h" // Inlcude do led
+
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
 
@@ -84,6 +86,12 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 float latitude = 0;
 float longitude = 0;
 float speed = 0;
+
+// Declaração LED
+
+kernel_pid_t *led_pid;
+
+////
 
 /* Helper macro to define _si1133_strerr */
 #define CASE_SI1133_ERROR_STRING(X)                                            \
@@ -733,6 +741,10 @@ int main(void)
     puts("This test will sample all available ADC lines once every 100ms with\n"
          "a 10-bit resolution and print the sampled results to STDIO\n\n");
 
+    // LED
+
+    run_blink_led(led_pid);
+    
     init_gps();
     
     /* Initialize ringbuffer */
@@ -835,11 +847,9 @@ int main(void)
     EXPECT_RET_CODE(SI1133_ERR_PARAMS, si1133_easy_configure(&devSI, all, 1, 0));
 
     /* All except one is lower than the limit of 6. */
-    // all &= ~SI1133_SENS_WHITE;
-    // EXPECT_RET_CODE(SI1133_OK, si1133_easy_configure(&devSI, all, 1, 0));
+  
     int32_t values[6];
-    // EXPECT_RET_CODE(SI1133_OK,
-    //                 si1133_capture_sensors(&devSI, values, ARRAY_SIZE(values)));
+
     uint32_t sw_gain=2;
     uint8_t sensor_mask =
             SI1133_SENS_LARGE_IR |
