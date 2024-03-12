@@ -64,12 +64,17 @@
 #include "periph/adc.h"
 
 #include "shell.h"
+#include "shell_commands.h" // modificado
 
 #include "ringbuffer.h"
 #include "periph/uart.h"
 #include "minmea.h"
 
-#include "led.h" // Inlcude do led
+// Inlcude do led
+
+#include "led.h" 
+
+//// Fim LED
 
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
@@ -89,9 +94,19 @@ float speed = 0;
 
 // Declaração LED
 
-kernel_pid_t *led_pid;
 
+// int led_handler(int argc, char **argv);
+
+
+
+
+//static void shell_run_forever	(	const shell_command_t * 	commands,
+//char * 	line_buf,
+//int 	len 
+//)	
 ////
+
+/////////////////////// End LED
 
 /* Helper macro to define _si1133_strerr */
 #define CASE_SI1133_ERROR_STRING(X)                                            \
@@ -734,6 +749,19 @@ int init_gps(void)
     return 0;
 }
 
+
+//int led_handler(int argc, char **argv) {
+//
+//    (void)argv;
+//    (void)argc;
+//    
+//    kernel_pid_t *led_pid;
+//
+//    run_blink_led(led_pid);
+//
+//    return 0;
+//}
+
 int main(void)
 {
 
@@ -743,7 +771,34 @@ int main(void)
 
     // LED
 
-    run_blink_led(led_pid);
+    /*run_blink_led(led_pid);*/
+
+    //shell_command_handler_t handler;
+    //shell_command_t values = {"bled", "", led_handler};
+    //shell_command_t *blink_led = &values;
+
+    //inicialização shell
+
+    //extern shell_command_t *shell_commands_xfa_disable_heartbeat_disable_heartbeat;
+    //extern shell_command_t *shell_commands_xfa_enable_heartbeat_enable_heartbeat;
+    //
+    //static const shell_command_t shell_commands[] = {{shell_commands_xfa_disable_heartbeat_disable_heartbeat}, {shell_commands_xfa_enable_heartbeat_enable_heartbeat}
+    //                                    , {NULL, NULL, NULL}};
+
+
+    kernel_pid_t led_pid;
+    run_blink_led(&led_pid);
+
+    char line_buf[SHELL_DEFAULT_BUFSIZE];
+    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    //kernel_pid_t led_pid;
+    //run_blink_led(&led_pid);
+    
+    
+
+
+    ////// FIM LED
     
     init_gps();
     

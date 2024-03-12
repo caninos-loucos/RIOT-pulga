@@ -26,6 +26,10 @@ USEPKG += nimble
 USEMODULE += nimble_svc_gap
 USEMODULE += nimble_svc_gatt
 
+# Enable SHELL
+USEMODULE += shell
+USEMODULE += shell_commands
+
 # Use automated advertising
 USEMODULE += nimble_autoadv
 CFLAGS += -DNIMBLE_AUTOADV_DEVICE_NAME='"Internet of Trees"'
