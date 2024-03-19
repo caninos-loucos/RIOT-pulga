@@ -64,9 +64,5 @@ int _enable_heartbeat(int argc, char** argv)
 }
 SHELL_COMMAND(enable_heartbeat, "Enable heartbeat", _enable_heartbeat);
 
-//const shell_command_t shell_commands[] = {
-//    { "ehrtb", "Enables heartbeat frase teste", _enable_heartbeat },
-//    { "dhrtb", "Disables heartbeat", _disable_heartbeat },
-//    { NULL, NULL, NULL }
-//};
+
 

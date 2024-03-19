@@ -19,8 +19,6 @@ extern "C" {
 
 void run_blink_led(kernel_pid_t *led_pid);
 
-//extern const shell_command_t shell_commands[];
-
 #ifdef __cplusplus
 }
 #endif

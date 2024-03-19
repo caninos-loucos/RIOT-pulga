@@ -95,16 +95,6 @@ float speed = 0;
 // Declaração LED
 
 
-// int led_handler(int argc, char **argv);
-
-
-
-
-//static void shell_run_forever	(	const shell_command_t * 	commands,
-//char * 	line_buf,
-//int 	len 
-//)	
-////
 
 /////////////////////// End LED
 
@@ -160,7 +150,7 @@ static kernel_pid_t sender_pid;
 #define PERIOD_S            (20U)
 
 #define SENDER_PRIO         (THREAD_PRIORITY_MAIN - 1)
-//static kernel_pid_t sender_pid;
+static kernel_pid_t sender_pid;
 static char sender_stack[THREAD_STACKSIZE_MAIN / 2];
 static void *sender(void *arg);
 
@@ -522,8 +512,15 @@ static int gatt_svr_chr_access_rw_demo(
             sender_pid = thread_create(sender_stack, sizeof(sender_stack),
                                SENDER_PRIO, 0, sender, NULL, "sender");
 
+            printf("PASSOU DA THREAD\n"); 
+
             msg_t msg;
+
+            printf("PASSOU MGS_VAR\n"); 
+
             msg_send(&msg, sender_pid); 
+
+            printf("PASSOU MGS\n"); 
             
             return rc;
         }
@@ -548,7 +545,7 @@ static sx127x_t sx127x;
 
 static ztimer_t timer;
 
-static bmx280_t dev;
+//static bmx280_t dev;
 
 char message[100];
 
@@ -750,18 +747,6 @@ int init_gps(void)
 }
 
 
-//int led_handler(int argc, char **argv) {
-//
-//    (void)argv;
-//    (void)argc;
-//    
-//    kernel_pid_t *led_pid;
-//
-//    run_blink_led(led_pid);
-//
-//    return 0;
-//}
-
 int main(void)
 {
 
@@ -769,46 +754,28 @@ int main(void)
     puts("This test will sample all available ADC lines once every 100ms with\n"
          "a 10-bit resolution and print the sampled results to STDIO\n\n");
 
-    // LED
-
-    /*run_blink_led(led_pid);*/
-
-    //shell_command_handler_t handler;
-    //shell_command_t values = {"bled", "", led_handler};
-    //shell_command_t *blink_led = &values;
-
-    //inicialização shell
-
-    //extern shell_command_t *shell_commands_xfa_disable_heartbeat_disable_heartbeat;
-    //extern shell_command_t *shell_commands_xfa_enable_heartbeat_enable_heartbeat;
-    //
-    //static const shell_command_t shell_commands[] = {{shell_commands_xfa_disable_heartbeat_disable_heartbeat}, {shell_commands_xfa_enable_heartbeat_enable_heartbeat}
-    //                                    , {NULL, NULL, NULL}};
-
-
-    kernel_pid_t led_pid;
-    run_blink_led(&led_pid);
-
-    char line_buf[SHELL_DEFAULT_BUFSIZE];
-    shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+    // LED //// Descomentar abaixo para ativar o shell
 
     //kernel_pid_t led_pid;
     //run_blink_led(&led_pid);
-    
-    
+    //
+    //char line_buf[SHELL_DEFAULT_BUFSIZE];
+    //shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+  
 
 
-    ////// FIM LED
+    //////// FIM LED
+    
     
     init_gps();
     
     /* Initialize ringbuffer */
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
-
+    
     /* Start the gps_handler thread */
     gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
                                GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
-
+    
     /* Initialize all available ADC lines */
     for (unsigned i = 0; i < ADC_NUMOF; i++) {
         if (adc_init(ADC_LINE(7)) < 0) {
@@ -937,7 +904,7 @@ int main(void)
     uint16_t value = 0;
     uint16_t interval = MEASUREMENT_INTERVAL_SECS;
 
-    scd30_set_param(&scd30_dev, SCD30_INTERVAL, MEASUREMENT_INTERVAL_SECS);
+    scd30_set_param(&scd30_dev, SCD30_INTERVAL, interval);
     scd30_set_param(&scd30_dev, SCD30_START, pressure_compensation);
 
     scd30_get_param(&scd30_dev, SCD30_INTERVAL, &value);
@@ -982,10 +949,10 @@ int main(void)
     switch (bmx280_init(&dev, &bmx280_params[0])) {
         case BMX280_ERR_BUS:
             puts("[Error] Something went wrong when using the I2C bus");
-            break; 
+            break;
         case BMX280_ERR_NODEV:
             puts("[Error] Unable to communicate with any BMX280 device");
-            break; 
+            break;
         default:
             /* All good -> do nothing */
             printf("BME280 initialized\n");
@@ -1042,16 +1009,22 @@ int main(void)
     _update_evt.handler = _hr_update;
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq, &_update_evt);
 
+    printf("SETOU FILA DE EVENTOS LOCAIS\n");
+
     /* Verify and add our custom services */
     res = ble_gatts_count_cfg(gatt_svr_svcs);
     assert(res == 0);
     res = ble_gatts_add_svcs(gatt_svr_svcs);
     assert(res == 0);
 
+    printf("VERIFICOU E ADICIONOU OS SERVICOS PROPRIOS\n");
+
     /* Set the device name */
     ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
     /* Reload the GATT server to link our added services */
     ble_gatts_start();
+
+    printf("SETOU O NOME DO DISPOSITIVO E RELOADOU O SERVER GATT\n");
 
     struct ble_gap_adv_params advp;
     memset(&advp, 0, sizeof(advp));
@@ -1062,16 +1035,24 @@ int main(void)
     
     advp.itvl_max  = BLE_GAP_ADV_FAST_INTERVAL1_MAX;
 
+    printf("PASSOU ALGUMAS DECLARACOES\n");
+
     /* Set advertise params */
     nimble_autoadv_set_ble_gap_adv_params(&advp);
+
+    printf("SETOU PARAMETROS\n");
 
     /* Configure and set the advertising data */
     nimble_autoadv_add_field(BLE_GAP_AD_UUID16_INCOMP, &latest_mesurement_uuid, sizeof(latest_mesurement_uuid));
 
     nimble_auto_adv_set_gap_cb(&gap_event_cb, NULL);
 
+    printf("CONFIGUROU OS DADOS DE AVISO\n");
+
     /* Start to advertise this node */
     nimble_autoadv_start();
+
+    printf("INICIOU O NODO DE AVISO\n");
 
     /* Run an event loop for handling the heart rate update events */
     event_loop(&_eq);
