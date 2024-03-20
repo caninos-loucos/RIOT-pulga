@@ -773,8 +773,7 @@ int main(void)
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
     
     /* Start the gps_handler thread */
-    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack),
-                               GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
+    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack), GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
     
     /* Initialize all available ADC lines */
     for (unsigned i = 0; i < ADC_NUMOF; i++) {

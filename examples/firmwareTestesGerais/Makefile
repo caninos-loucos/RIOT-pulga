@@ -17,6 +17,8 @@ USEMODULE += si1133
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
 CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 #alterei aqui
 
+FEATURES_REQUIRED += cpp
+FEATURES_REQUIRED += periph_uart
 
 # Some RIOT modules needed for this example
 USEMODULE += event_timeout_ztimer
@@ -53,6 +55,17 @@ LORA_REGION ?= AU915
 
 # Include the Semtech-loramac package
 USEPKG += semtech-loramac
+
+# Include Minmea package
+#USEPKG += minmea
+
+# Default serial port
+PORT ?= /dev/ttyUSB0
+
+# Configurations needed to avoid kernel panic
+CFLAGS += -DTCP_MSL=1000
+CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
+CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
 
 USEMODULE += fmt
 
