@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-//#include <time.h>
 
 #include "assert.h"
 #include "event/timeout.h"
@@ -65,7 +64,7 @@
 #include "periph/adc.h"
 
 #include "shell.h"
-#include "shell_commands.h" // modificado
+#include "shell_commands.h" 
 
 #include "ringbuffer.h"
 #include "periph/uart.h"
@@ -92,12 +91,6 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 float *latitude = 0;
 float *longitude = 0;
 float *speed = 0;
-
-// Declaração LED
-
-
-
-/////////////////////// End LED
 
 /* Helper macro to define _si1133_strerr */
 #define CASE_SI1133_ERROR_STRING(X)                                            \
@@ -494,7 +487,6 @@ static int gatt_svr_chr_access_rw_demo(
     }
     else if (ble_uuid_cmp(ctxt->chr->uuid, readonly_uuid) == 0)
     {
-        printf("ENTROU AQUI\n");
         puts("access to characteristic 'rw demo (read-only)'");
 
         printf("%d\n", ctxt->op);
@@ -508,26 +500,18 @@ static int gatt_svr_chr_access_rw_demo(
         if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR && strcmp(rm_demo_write_data, "oi") == 0)
         {
 
-            printf("ENTROU NA TAREFA LORA\n");     
-
             sender_pid = thread_create(sender_stack, sizeof(sender_stack),
                                SENDER_PRIO, 0, sender, NULL, "sender");
 
-            printf("PASSOU DA THREAD\n"); 
-
             msg_t msg;
 
-            printf("PASSOU MGS_VAR\n"); 
-
             msg_send(&msg, sender_pid); 
-
-            printf("PASSOU MGS\n"); 
             
             return rc;
         }
         else if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR && strcmp(rm_demo_write_data, "ri") == 0)
         {
-            printf("entrou na ri\n\r");
+            printf("entrou na ri\n\r"); //Que print eh esse?
             sender_pid = KERNEL_PID_UNDEF;
         }
 
@@ -545,8 +529,6 @@ semtech_loramac_t loramac;
 static sx127x_t sx127x;
 
 static ztimer_t timer;
-
-//static bmx280_t dev;
 
 char message[100];
 
@@ -579,8 +561,6 @@ static void _send_message(void)
     scd30_read_triggered(&scd30_dev, &result);
     si1133_capture_sensors(&devSI, valuesSI11, ARRAY_SIZE(valuesSI11));
     int sampleADC = adc_sample(ADC_LINE(7), RES);
-    //float lora_lat = latitude; ////FAZER UM PONTEIRO QUE APONTE PARA O CONTEUDO DE LAT//////
-    //float lora_long = longitude; ////FAZER UM PONTEIRO QUE APONTE PARA O CONTEUDO DE LONG//////
 
     /* Allocates memory for the characters array (char*) with  +1 for null character \0 */
     char* char_array = (char*)malloc(70* sizeof(char));
@@ -1016,22 +996,16 @@ int main(void)
     _update_evt.handler = _hr_update;
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq, &_update_evt);
 
-    printf("SETOU FILA DE EVENTOS LOCAIS\n");
-
     /* Verify and add our custom services */
     res = ble_gatts_count_cfg(gatt_svr_svcs);
     assert(res == 0);
     res = ble_gatts_add_svcs(gatt_svr_svcs);
     assert(res == 0);
 
-    printf("VERIFICOU E ADICIONOU OS SERVICOS PROPRIOS\n");
-
     /* Set the device name */
     ble_svc_gap_device_name_set(NIMBLE_AUTOADV_DEVICE_NAME);
     /* Reload the GATT server to link our added services */
     ble_gatts_start();
-
-    printf("SETOU O NOME DO DISPOSITIVO E RELOADOU O SERVER GATT\n");
 
     struct ble_gap_adv_params advp;
     memset(&advp, 0, sizeof(advp));
@@ -1042,24 +1016,16 @@ int main(void)
     
     advp.itvl_max  = BLE_GAP_ADV_FAST_INTERVAL1_MAX;
 
-    printf("PASSOU ALGUMAS DECLARACOES\n");
-
     /* Set advertise params */
     nimble_autoadv_set_ble_gap_adv_params(&advp);
-
-    printf("SETOU PARAMETROS\n");
 
     /* Configure and set the advertising data */
     nimble_autoadv_add_field(BLE_GAP_AD_UUID16_INCOMP, &latest_mesurement_uuid, sizeof(latest_mesurement_uuid));
 
     nimble_auto_adv_set_gap_cb(&gap_event_cb, NULL);
 
-    printf("CONFIGUROU OS DADOS DE AVISO\n");
-
     /* Start to advertise this node */
     nimble_autoadv_start();
-
-    printf("INICIOU O NODO DE AVISO\n");
 
     /* Run an event loop for handling the heart rate update events */
     event_loop(&_eq);

@@ -14,8 +14,9 @@ USEMODULE += checksum
 USEMODULE += xtimer
 USEMODULE += si1133
 
+# Important settings of BMX280 sensor
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
-CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 #alterei aqui
+CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 
 
 FEATURES_REQUIRED += cpp
 FEATURES_REQUIRED += periph_uart
@@ -37,7 +38,7 @@ USEMODULE += nimble_autoadv
 CFLAGS += -DNIMBLE_AUTOADV_DEVICE_NAME='"Internet of Trees"'
 CFLAGS += -DNIMBLE_AUTOADV_START_MANUALLY=1
 
-# pa boost by default
+# Pa boost by default
 CFLAGS += -DSX127X_PARAM_PASELECT="SX127X_PA_BOOST"
 
 DEVEUI ?= cafe000000000099
@@ -56,23 +57,20 @@ LORA_REGION ?= AU915
 # Include the Semtech-loramac package
 USEPKG += semtech-loramac
 
-# Include Minmea package
-#USEPKG += minmea
-
 # Default serial port
 PORT ?= /dev/ttyUSB0
 
-# Configurations needed to avoid kernel panic
+# Increases stacksize to prevent kernel panic
 CFLAGS += -DTCP_MSL=1000
 CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
 CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
 
 USEMODULE += fmt
 
-# printar float
+# Prints float
 USEMODULE += printf_float
 
-# Corrige ausencia de timegm
+# Fixes timegm absence
 CFLAGS += -Dtimegm=mktime
 
 # Comment this out to disable code in RIOT that does safety checking
