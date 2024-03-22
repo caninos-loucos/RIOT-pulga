@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 //#include <time.h>
 
 #include "assert.h"
@@ -88,9 +89,9 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 #endif
 
 /* Get GPS readings */
-float latitude = 0;
-float longitude = 0;
-float speed = 0;
+float *latitude = 0;
+float *longitude = 0;
+float *speed = 0;
 
 // Declaração LED
 
@@ -389,11 +390,11 @@ static void _hr_update(event_t *e)
     int sampleADC = adc_sample(ADC_LINE(7), RES);
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t), &sampleADC, sizeof(uint32_t));
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
-           + sizeof(float), &latitude, sizeof(float));
+           + sizeof(float), latitude, sizeof(float));
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
-           + sizeof(float) + sizeof(float), &longitude, sizeof(float));
+           + sizeof(float) + sizeof(float), longitude, sizeof(float));
     memcpy(sensor_measurements + sizeof(float) + sizeof(uint32_t) + sizeof(int16_t) + sizeof(int) + sizeof(uint32_t) + sizeof(uint32_t)
-           + sizeof(float) + sizeof(float) + sizeof(float), &speed, sizeof(float));
+           + sizeof(float) + sizeof(float) + sizeof(float), speed, sizeof(float));
     
     /* Send heart rate data notification to GATT client */
     om = ble_hs_mbuf_from_flat(sensor_measurements, sizeof(sensor_measurements));
@@ -409,9 +410,9 @@ static void _hr_update(event_t *e)
     printf("   Luminosidade [lux]:    %lu\n\r", lum);
     printf("   UV [lux]:              %lu\n\r", uv);
     printf("   Battery     [V]:       %d\n\r",  sampleADC);
-    printf("   Latitude     [Dec]:       %f\n\r",  latitude);
-    printf("   Longitude     [Dec]:       %f\n\r",  longitude);
-    printf("   Speed     [m/s]:       %f\n\r",  speed);
+    printf("   Latitude     [Dec]:       %f\n\r",  *latitude);
+    printf("   Longitude     [Dec]:       %f\n\r",  *longitude);
+    printf("   Speed     [m/s]:       %f\n\r",  *speed);
 
     /* Schedule next update event */
     event_timeout_set(&_update_timeout_evt, UPDATE_INTERVAL);
@@ -578,17 +579,24 @@ static void _send_message(void)
     scd30_read_triggered(&scd30_dev, &result);
     si1133_capture_sensors(&devSI, valuesSI11, ARRAY_SIZE(valuesSI11));
     int sampleADC = adc_sample(ADC_LINE(7), RES);
-    float lora_lat = latitude;
-    float lora_long = longitude;
-    float lora_speed = speed; 
+    //float lora_lat = latitude; ////FAZER UM PONTEIRO QUE APONTE PARA O CONTEUDO DE LAT//////
+    //float lora_long = longitude; ////FAZER UM PONTEIRO QUE APONTE PARA O CONTEUDO DE LONG//////
 
     /* Allocates memory for the characters array (char*) with  +1 for null character \0 */
     char* char_array = (char*)malloc(70* sizeof(char));
     result.co2_concentration *= 100;
 
-    /* Copies int16_t value to char_array */
-    snprintf(char_array,77, "%d;%lu;%d;%d;%lu;%lu;%d;%f;%f;%f", temperature, pressure, humidity,(int)(result.co2_concentration), valuesSI11[1], valuesSI11[2], sampleADC
-                                                              , lora_lat, lora_long, lora_speed);
+    if(!(isnan(*latitude) || isnan(*longitude))) {
+        /* Copies int16_t value to char_array */
+        snprintf(char_array,77, "%d;%lu;%d;%d;%lu;%lu;%d;%f;%f", temperature, pressure, humidity,(int)(result.co2_concentration), valuesSI11[1], valuesSI11[2], sampleADC
+                                                                  , *latitude, *longitude);
+    }else {
+        *latitude = 0;
+        *longitude = 0;
+        /* Copies int16_t value to char_array */
+        snprintf(char_array,77, "%d;%lu;%d;%d;%lu;%lu;%d;%f;%f", temperature, pressure, humidity,(int)(result.co2_concentration), valuesSI11[1], valuesSI11[2], sampleADC
+                                                                  , *latitude, *longitude);
+        }
     
     /* Keeps the negative signal (-) at the char_array beggining when temperature is negative */ 
     if (temperature < 0) {
@@ -684,9 +692,9 @@ static void *gps_handler(void *arg)
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
 
-                                    latitude = minmea_tocoord(&frame.latitude);
-                                    longitude = minmea_tocoord(&frame.longitude);
-                                    speed = minmea_tofloat(&frame.speed);
+                                    *latitude = minmea_tocoord(&frame.latitude);
+                                    *longitude = minmea_tocoord(&frame.longitude);
+                                    *speed = minmea_tofloat(&frame.speed);
 
                         } else {
                             puts("Could not parse $RMC message. Possibly incomplete");
