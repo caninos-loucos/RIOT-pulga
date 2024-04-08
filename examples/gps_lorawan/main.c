@@ -92,6 +92,8 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 #define UART_BUFSIZE        (128U)
 #endif
 
+
+
 /* Get GPS readings */
 float *latitude;
 float *longitude;
@@ -607,7 +609,11 @@ static void _send_message(void) {
    strcpy(destination, char_array);
 
    /* Try to send the message */
-   uint8_t ret = semtech_loramac_send(&loramac,(uint8_t *)destination, sizeof(destination));
+   uint8_t ret = semtech_loramac_send(&loramac,(uint8_t *)destination, strlen(destination));
+
+    printf("Size destination: %u\n", sizeof(destination));
+    printf("Destination: %s\n", destination);
+
    if (ret != SEMTECH_LORAMAC_TX_DONE)  {
        printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
        return;
