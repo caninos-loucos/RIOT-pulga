@@ -1,5 +1,5 @@
 # name of your application
-APPLICATION = firmwareGeral
+APPLICATION = gps-lorawan
 # If no BOARD is found in the environment, use this default:
 BOARD ?= pulga
 
@@ -80,6 +80,11 @@ DEVELHELP ?= 1
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
+
+USEPKG += minmea
+USEMODULE += ps
+USEMODULE += xtimer
+
 
 include $(RIOTBASE)/Makefile.include
 
