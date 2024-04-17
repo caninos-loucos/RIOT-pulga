@@ -6,17 +6,17 @@ BOARD ?= pulga
 # This has to be the absolute path to the RIOT base directory:
 RIOTBASE ?= $(CURDIR)/../../../pulga-riot
 
-DRIVER ?= bme280_i2c
-USEMODULE += $(DRIVER)
-FEATURES_REQUIRED += periph_i2c
-FEATURES_REQUIRED += periph_adc
-USEMODULE += checksum
-USEMODULE += xtimer
-USEMODULE += si1133
+#DRIVER ?= bme280_i2c
+#USEMODULE += $(DRIVER)
+#FEATURES_REQUIRED += periph_i2c
+#FEATURES_REQUIRED += periph_adc
+#USEMODULE += checksum
+#USEMODULE += xtimer
+#USEMODULE += si1133
 
 # Important settings of BMX280 sensor
-CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
-CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 
+#CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
+#CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 
 
 FEATURES_REQUIRED += cpp
 FEATURES_REQUIRED += periph_uart
@@ -24,23 +24,29 @@ FEATURES_REQUIRED += periph_uart
 # Some RIOT modules needed for this example
 USEMODULE += event_timeout_ztimer
 
+# MINMEA important features
+USEPKG += minmea
+USEMODULE += ps
+USEMODULE += xtimer
+
 # Include NimBLE
-USEPKG += nimble
-USEMODULE += nimble_svc_gap
-USEMODULE += nimble_svc_gatt
+#USEPKG += nimble
+#USEMODULE += nimble_svc_gap
+#USEMODULE += nimble_svc_gatt
 
 # Enable SHELL
-USEMODULE += shell
-USEMODULE += shell_commands
+#USEMODULE += shell
+#USEMODULE += shell_commands
 
 # Use automated advertising
-USEMODULE += nimble_autoadv
-CFLAGS += -DNIMBLE_AUTOADV_DEVICE_NAME='"Internet of Trees"'
-CFLAGS += -DNIMBLE_AUTOADV_START_MANUALLY=1
+#USEMODULE += nimble_autoadv
+#CFLAGS += -DNIMBLE_AUTOADV_DEVICE_NAME='"Internet of Trees"'
+#CFLAGS += -DNIMBLE_AUTOADV_START_MANUALLY=1
 
 # Pa boost by default
 CFLAGS += -DSX127X_PARAM_PASELECT="SX127X_PA_BOOST"
 
+# LoraWAN configs 
 DEVEUI ?= cafe000000000099
 APPEUI ?= cafe000000000099
 
@@ -80,11 +86,6 @@ DEVELHELP ?= 1
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
-
-USEPKG += minmea
-USEMODULE += ps
-USEMODULE += xtimer
-
 
 include $(RIOTBASE)/Makefile.include
 
