@@ -65,15 +65,15 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 #endif
 
 /** 
-*  Size of lorawan buffer. 
-*  It stores latitude, longitude and timestamp (Epoch). 
+*  Size of lorawan ringbuffer. 
+*  It stores latitude, longitude and timestamp (Epoch) 4 times. 
 */
 #ifndef LORAWAN_BUFSIZE
 #define LORAWAN_BUFSIZE        (132) 
 #endif
 
 /* Messages are sent every 300s (5 minutes) to respect the duty cycle on each channel */
-#define PERIOD_S            (20U)
+#define PERIOD_S            (300U)
 
 #define SENDER_PRIO         (THREAD_PRIORITY_MAIN - 1)
 static kernel_pid_t sender_pid;
@@ -183,7 +183,10 @@ static void *gps_handler(void *arg)
     int pos = 0;
     char line[MINMEA_MAX_LENGTH];
 
-    /* Char arrays that gets GPS desired data and sends with lora */
+    /** 
+    * Char arrays that gets GPS desired data and sends with lora. 
+    * Sends only 1/4 of the lorawan ringbuffer
+    */
     char *gps_readings = (char*)malloc(33*sizeof(char));   
     char *gps_sender = (char*)malloc(33*sizeof(char));
 
@@ -228,6 +231,7 @@ static void *gps_handler(void *arg)
                             /* strcpy is necessary to add the null character in the end of array */
                             strcpy(gps_sender, gps_readings);
 
+                            /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
                             uint16_t i;
                             for(i = 0; i <= strlen(gps_sender); i++) {
                                 ringbuffer_add_one(&ctx_lora.rx_buf, gps_sender[i]);
