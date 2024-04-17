@@ -116,8 +116,8 @@ static void _prepare_next_alarm(void) {
 
 static void _send_message(void) {
 
-    char *destination = (char*)malloc(33*sizeof(char));
-    ringbuffer_get(&(ctx_lora.rx_buf), destination, 33);
+    char *destination = (char*)malloc(132*sizeof(char));
+    ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
     printf("Destination: %s\n", destination);
 
     /* Try to send the message */
@@ -219,7 +219,8 @@ static void *gps_handler(void *arg)
                             }    
 
                             /* 33 is for all the algarisms, ponctuations (-,;+ etc.) and the null char */
-                            int ret = snprintf(gps_readings,132,"%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec);
+                            int ret = snprintf(gps_readings,132,"%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec,
+                                              lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec);
                             if (ret < 0) {
                                 puts("Cannot get gps data");
                                 return 0;
