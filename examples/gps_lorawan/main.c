@@ -92,7 +92,7 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 
 /* Ringbuffer enviado por Lorawan */
 #ifndef LORAWAN_BUFSIZE
-#define LORAWAN_BUFSIZE        (128)
+#define LORAWAN_BUFSIZE        (132) /* 33 * 4 */
 #endif
 
 
@@ -550,61 +550,68 @@ struct gps_data {
 };
 struct gps_data *gps;
 
-struct lora_ringbuffer{
-    int size;
-    int pos;
-    struct gps_data queue[LORAWAN_BUFSIZE];
-};
-struct lora_ringbuffer *lora_rb;
+typedef struct {
+    char rx_mem[LORAWAN_BUFSIZE];
+    ringbuffer_t rx_buf;
+} lora_ctx_t;
+static lora_ctx_t ctx_lora;
 
-/* Init lorawan ringbuffer */
-void init_lora_ringbuffer(struct lora_ringbuffer *ringbuffer) {
-    ringbuffer->pos = 0;
-    ringbuffer->size = 0;
-}
 
-/* Adds the gps data into the last position of ring ringbuffer. */
-/* It overwrites the data if the ringbuffer is full.            */
-void lora_ringbuffer_push(struct lora_ringbuffer *ring, float latitude, float longitude) {
-
-    printf("CHECAGEM DENTRO DO PUSH0: %f, %f\n", latitude, longitude);
-
-    (&(ring->queue[ring->pos]))->latitude = latitude;
-    (&(ring->queue[ring->pos]))->longitude = longitude;
-    
-    //ring->queue[ring->pos] = *data;
-
-    
-    printf("CHECAGEM DENTRO DO PUSH: %f, %f\n", ring->queue[ring->pos].latitude, ring->queue[ring->pos].longitude);
-    printf("CHECAGEM DENTRO DO PUSH2: %f, %f\n", (&(ring->queue[ring->pos]))->latitude, (&(ring->queue[ring->pos]))->longitude);
-
-    if (ring->pos >= LORAWAN_BUFSIZE)
-        ring->pos = 0;
-    else
-        ring->pos++;
-
-    if (ring->size < LORAWAN_BUFSIZE)
-        ring->size++;
-}
-
-/* Returns the last element of ring in data.               */
-/* Returns -1 if ring is empty or 0 if sucessfully added.  */
-int lora_ringbuffer_pop(struct lora_ringbuffer *ring, struct gps_data *data)
-{
-    if (ring->size == 0)
-        return -1; 
-    else
-        ring->size--;
-
-    if (ring->pos == 0)
-        ring->pos = LORAWAN_BUFSIZE-1;
-    else
-        ring->pos--;
-    
-    *data = ring->queue[ring->pos];
-
-    return 0; 
-}
+//struct lora_ringbuffer{
+//    int size;
+//    int pos;
+//    struct gps_data queue[LORAWAN_BUFSIZE];
+//};
+//struct lora_ringbuffer *lora_rb;
+//
+///* Init lorawan ringbuffer */
+//void init_lora_ringbuffer(struct lora_ringbuffer *ringbuffer) {
+//    ringbuffer->pos = 0;
+//    ringbuffer->size = 0;
+//}
+//
+///* Adds the gps data into the last position of ring ringbuffer. */
+///* It overwrites the data if the ringbuffer is full.            */
+//void lora_ringbuffer_push(struct lora_ringbuffer *ring, float latitude, float longitude) {
+//
+//    printf("CHECAGEM DENTRO DO PUSH0: %f, %f\n", latitude, longitude);
+//
+//    (&(ring->queue[ring->pos]))->latitude = latitude;
+//    (&(ring->queue[ring->pos]))->longitude = longitude;
+//    
+//    //ring->queue[ring->pos] = *data;
+//
+//    
+//    printf("CHECAGEM DENTRO DO PUSH: %f, %f\n", ring->queue[ring->pos].latitude, ring->queue[ring->pos].longitude);
+//    printf("CHECAGEM DENTRO DO PUSH2: %f, %f\n", (&(ring->queue[ring->pos]))->latitude, (&(ring->queue[ring->pos]))->longitude);
+//
+//    if (ring->pos >= LORAWAN_BUFSIZE)
+//        ring->pos = 0;
+//    else
+//        ring->pos++;
+//
+//    if (ring->size < LORAWAN_BUFSIZE)
+//        ring->size++;
+//}
+//
+///* Returns the last element of ring in data.               */
+///* Returns -1 if ring is empty or 0 if sucessfully added.  */
+//int lora_ringbuffer_pop(struct lora_ringbuffer *ring, struct gps_data *data)
+//{
+//    if (ring->size == 0)
+//        return -1; 
+//    else
+//        ring->size--;
+//
+//    if (ring->pos == 0)
+//        ring->pos = LORAWAN_BUFSIZE-1;
+//    else
+//        ring->pos--;
+//    
+//    *data = ring->queue[ring->pos];
+//
+//    return 0; 
+//}
 
 
 
@@ -647,34 +654,34 @@ static void _send_message(void) {
    //int sampleADC = adc_sample(ADC_LINE(7), RES);
 
    /* Allocates memory for the characters array (char*) with  +1 for null character \0 */
-   char* char_array = (char*)malloc(70*sizeof(char));
+   //char* char_array = (char*)malloc(70*sizeof(char));
    //result.co2_concentration *= 100;
-   struct gps_data *readings = NULL;
+   //struct gps_data *readings = NULL;
 
    
 
    
-    if(!(lora_ringbuffer_pop(lora_rb, readings))) 
-        puts("Couldn't get gps readings!");
-    
+//    if(!(lora_ringbuffer_pop(lora_rb, readings))) 
+//        puts("Couldn't get gps readings!");
+//    
+//
+//    printf("DADOS: %f, %f: \n", readings->latitude, readings->longitude);
+//
+//    if(isnan(readings->latitude) && isnan(readings->longitude)) {
+//        readings->latitude = 0;
+//        readings->longitude = 0;
+//    }
+//
+//    printf("DADOS 2: %f, %f: \n", readings->latitude, readings->longitude);
+//
+//    snprintf(char_array,77,"%f;%f", readings->latitude, readings->longitude);
 
-    printf("DADOS: %f, %f: \n", readings->latitude, readings->longitude);
 
-    if(isnan(readings->latitude) && isnan(readings->longitude)) {
-        readings->latitude = 0;
-        readings->longitude = 0;
-    }
-
-    printf("DADOS 2: %f, %f: \n", readings->latitude, readings->longitude);
-
-    snprintf(char_array,77,"%f;%f", readings->latitude, readings->longitude);
-
-
-   printf("%u\n", sizeof(&char_array));
-   printf("%s\n", char_array);
-   printf("%u\n", sizeof(char));
-   printf("%u\n", sizeof(float));
-   printf("%u", sizeof(double));
+//   printf("%u\n", sizeof(&char_array));
+//   printf("%s\n", char_array);
+//   printf("%u\n", sizeof(char));
+//   printf("%u\n", sizeof(float));
+//   printf("%u", sizeof(double));
    
    ///* Keeps the negative signal (-) at the char_array beggining when temperature is negative */ 
    //if (temperature < 0) {
@@ -683,14 +690,18 @@ static void _send_message(void) {
    //}
 
    /* Destination vector (char*) */ 
-   char* destination = (char*)malloc(70*sizeof(char));
+   //char* destination = (char*)malloc(70*sizeof(char));
+
+   char *destination = (char*)malloc(33*sizeof(char));
+   ringbuffer_get(&(ctx_lora.rx_buf), destination, 33);
+   printf("Destination: %s\n", destination);
    
    /* Copies char_array to destination */ 
-   strcpy(destination, char_array);
+   //strcpy(destination, char_array);
 
 
    /* Try to send the message */
-   uint8_t ret = semtech_loramac_send(&loramac,(uint8_t *)destination, strlen(destination));
+   uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 33);
 
    //printf("Buffer conteudo: %s\n", ctx_lora.rx_buf.buf);
 
@@ -704,7 +715,7 @@ static void _send_message(void) {
        return;
    }
 
-   free(char_array);
+   //free(char_array);
    free(destination);
 }
 
@@ -763,6 +774,9 @@ static void *gps_handler(void *arg)
     int pos = 0;
     char line[MINMEA_MAX_LENGTH];
 
+    char *gps_readings = (char*)malloc(33*sizeof(char));   
+    char *gps_sender = (char*)malloc(33*sizeof(char));
+
     while (1) {
         msg_receive(&msg);
         char c;
@@ -775,6 +789,7 @@ static void *gps_handler(void *arg)
                 switch (minmea_sentence_id(line, false)) {
                     case MINMEA_SENTENCE_RMC: {
                         struct minmea_sentence_rmc frame;
+                        struct timespec time; 
                         if (minmea_parse_rmc(&frame, line)) {
 
                             
@@ -785,23 +800,68 @@ static void *gps_handler(void *arg)
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
 
+                                    // Gets gps readings
+                                    float lat = minmea_tocoord(&frame.latitude);
+                                    float lon = minmea_tocoord(&frame.longitude);
+                                    minmea_gettime(&time, &(frame.date), &(frame.time));
+                                    
+                                    
+                                    //float sped = minmea_tofloat(&frame.speed);
 
-                                    //lat = minmea_tocoord(&frame.latitude);
-                                    //lon = minmea_tocoord(&frame.longitude);
-                                    //sped = minmea_tofloat(&frame.speed);
+                                    printf("Timestamp: %ld\n", (long)time.tv_sec);
 
-                                    gps->latitude = minmea_tocoord(&frame.latitude);
-                                    gps->longitude = minmea_tocoord(&frame.longitude);
-                                    gps->speed = minmea_tofloat(&frame.speed);
-
-                                    printf("CHECAGEM DADOS0: %f, %f: \n", gps->latitude, gps->longitude);
+                                    if(isnan(lat) && isnan(lon)) {
+                                        lat = -90;
+                                        lon = -90;
+                                    }
 
 
-                                    lora_ringbuffer_push(lora_rb, minmea_tocoord(&frame.latitude), minmea_tocoord(&frame.longitude));
+                                    // vetor de char que armazena os chars a serem enviados
+                                      
 
-                                    printf("CHECAGEM DADOS1: %f, %f: \n", gps->latitude, gps->longitude);
 
-                                    printf("CHECAGEM PUSH: %f, %f: \n",lora_rb->queue[0].latitude, lora_rb->queue[0].longitude);
+                                    // 22 is for all the algarisms plus ponctuations and null char (-,;+ etc.)
+                                    int ret = snprintf(gps_readings,33,"%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec);
+                                    if (ret < 0) {
+                                        puts("Cannot get gps data");
+                                        return 0;
+                                    }
+
+
+
+                                    printf("GPS READINGS: %s\n", gps_readings);
+
+                                    // vetor de char que envia 8 chars (2 floats)
+                                    // eh necessario para usar no memcpy, pois assim adiciona o caractere nulo
+                                    
+
+                                    strcpy(gps_sender, gps_readings);
+
+                                    uint16_t i;
+                                    for(i = 0; i <= strlen(gps_sender); i++) {
+                                        ringbuffer_add_one(&ctx_lora.rx_buf, gps_sender[i]);
+                                    }
+
+                                    free(gps_readings);
+                                    free(gps_sender);
+
+
+                                    
+
+                                    
+
+                                    //gps->latitude = minmea_tocoord(&frame.latitude);
+                                    //gps->longitude = minmea_tocoord(&frame.longitude);
+                                    //gps->speed = minmea_tofloat(&frame.speed);
+                                    //
+                                    //printf("CHECAGEM DADOS0: %f, %f: \n", gps->latitude, gps->longitude);
+                                    //     
+                                    //
+                                    //lora_ringbuffer_push(lora_rb, minmea_tocoord(&frame.latitude), minmea_tocoord(&frame.longitude));
+                                    //
+                                    //printf("CHECAGEM DADOS1: %f, %f: \n", gps->latitude, gps->longitude);
+                                    //
+                                    //printf("CHECAGEM PUSH: %f, %f: \n",lora_rb->queue[0].latitude, lora_rb->queue[0].longitude);
                                     
                                     
                                     
@@ -847,6 +907,8 @@ static void *gps_handler(void *arg)
             }
         } while (c != '\n');
     }
+
+   
 
     /* This should never be reached */
     return NULL;
@@ -899,7 +961,8 @@ int main(void)
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
 
     /* Initialize lora ringbuffer */
-    init_lora_ringbuffer(lora_rb);
+    ringbuffer_init(&(ctx_lora.rx_buf), ctx_lora.rx_mem, LORAWAN_BUFSIZE);
+    //init_lora_ringbuffer(lora_rb);
 
 
     init_gps();
