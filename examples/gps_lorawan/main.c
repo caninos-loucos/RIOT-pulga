@@ -121,7 +121,7 @@ static void _send_message(void) {
     printf("Destination: %s\n", destination);
 
     /* Try to send the message */
-    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 33);
+    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 132);
     if (ret != SEMTECH_LORAMAC_TX_DONE)  {
         printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
         return;
@@ -185,10 +185,9 @@ static void *gps_handler(void *arg)
 
     /** 
     * Char arrays that gets GPS desired data and sends with lora. 
-    * Sends only 1/4 of the lorawan ringbuffer
     */
-    char *gps_readings = (char*)malloc(33*sizeof(char));   
-    char *gps_sender = (char*)malloc(33*sizeof(char));
+    char *gps_readings = (char*)malloc(132*sizeof(char));   
+    char *gps_sender = (char*)malloc(132*sizeof(char));
 
     while (1) {
         msg_receive(&msg);
@@ -220,7 +219,7 @@ static void *gps_handler(void *arg)
                             }    
 
                             /* 33 is for all the algarisms, ponctuations (-,;+ etc.) and the null char */
-                            int ret = snprintf(gps_readings,33,"%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec);
+                            int ret = snprintf(gps_readings,132,"%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec);
                             if (ret < 0) {
                                 puts("Cannot get gps data");
                                 return 0;
