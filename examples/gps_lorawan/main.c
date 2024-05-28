@@ -65,12 +65,12 @@
 #define PMTK_CMD_FULL_COLD_START    "$PMTK104*37\r\n"
 
 /* GPS UART adress */
-int dev_gps = 1;
+//int dev_gps = 1;
 
 /* 
 *   Counts the ammount of messages that was sent by LoRaWAN.  
 */
-uint8_t sent_messages = 0; 
+//uint8_t sent_messages = 0; 
 
 #define GPS_HANDLER_PRIO        (THREAD_PRIORITY_MAIN - 1) //Higher priority than LoraWAN thread
 static kernel_pid_t gps_handler_pid;
@@ -88,13 +88,13 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 #define LORAWAN_BUFSIZE        (132U) 
 #endif
 
-///* Messages are sent every 300s (5 minutes) to respect the duty cycle on each channel */  //MUDAR PRA 300
-//#define PERIOD_S            (20U)
-//
-//#define SENDER_PRIO         (THREAD_PRIORITY_IDLE - 1) //Lower than GPS thread
-//static kernel_pid_t sender_pid;
-//static char sender_stack[THREAD_STACKSIZE_MAIN / 2];
-//static void *sender(void *arg);
+/* Messages are sent every 300s (5 minutes) to respect the duty cycle on each channel */  //MUDAR PRA 300
+#define PERIOD_S            (300U)
+
+#define SENDER_PRIO         (THREAD_PRIORITY_IDLE - 1) //Lower than GPS thread
+static kernel_pid_t sender_pid;
+static char sender_stack[THREAD_STACKSIZE_MAIN / 2];
+static void *sender(void *arg);
 
 typedef struct {
     char rx_mem[LORAWAN_BUFSIZE];
@@ -105,7 +105,7 @@ static lora_ctx_t ctx_lora;
 semtech_loramac_t loramac;
 static sx127x_t sx127x;
 
-//static ztimer_t timer;
+static ztimer_t timer;
 
 char message[100];
 
@@ -116,82 +116,48 @@ static uint8_t appskey[LORAMAC_APPSKEY_LEN];
 static uint8_t nwkskey[LORAMAC_NWKSKEY_LEN];
 static uint8_t devaddr[LORAMAC_DEVADDR_LEN];
 
-//static void _alarm_cb(void *arg) {
-//
-//   (void) arg;
-//   msg_t msg;
-//   msg_send(&msg, sender_pid);
-//}
-//
-//static void _prepare_next_alarm(void) {
-//
-//   timer.callback = _alarm_cb;
-//   ztimer_set(ZTIMER_MSEC, &timer, PERIOD_S * MS_PER_SEC);
-//}
-
-
-//static void _send_message(void) {
-//    printf("CONTAGEM 1: %u\r\n", sent_messages);
-//
-//    char *destination = (char*)malloc(132*sizeof(char));
-//    ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
-//
-//    printf("\r\n\n\n\n\n\nDestination: %s\r\n\n\n\n\n\n\n\n\n", destination);
-//
-//    /* Try to send the message */
-//    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 132);
-//    if (ret != SEMTECH_LORAMAC_TX_DONE)  {
-//        printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
-//    }
-//
-//    free(destination);
-//
-//    ztimer_sleep(ZTIMER_SEC, 5);
-//}
-
-
-void delay_n_second(uint16_t n) {
-    unsigned long long int num_cycles = 12000000 * n; // 48 MHz * 1 segundo
-    while (num_cycles > 0) {
-        __asm__ volatile ("nop"); // No Operation, gasta um ciclo de clock
-        num_cycles--;
-    }
+static void _alarm_cb(void *arg) {
+   (void) arg;
+   msg_t msg;
+   msg_send(&msg, sender_pid);
 }
+
+static void _prepare_next_alarm(void) {
+   timer.callback = _alarm_cb;
+   ztimer_set(ZTIMER_MSEC, &timer, PERIOD_S * MS_PER_SEC);
+}
+
+
+static void _send_message(void) {
+
+    char *destination = (char*)malloc(132*sizeof(char));
+    ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
+
+    //printf("\r\n\n\n\n\n\nDestination: %s\r\n\n\n\n\n\n\n\n\n", destination);
+
+    /* Try to send the message */
+    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), strlen(destination));
+    if (ret != SEMTECH_LORAMAC_TX_DONE)  {
+        printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
+    }
+
+    free(destination);
+}
+
+
+//void delay_n_second(uint16_t n) {
+//    unsigned long long int num_cycles = 12000000 * n; // 48 MHz * 1 segundo
+//    while (num_cycles > 0) {
+//        __asm__ volatile ("nop"); // No Operation, gasta um ciclo de clock
+//        num_cycles--;
+//    }
+//}
 
 
 static void *sender(void *arg) {
 
-    (void) arg;
-
-    printf("CONTAGEM 1: %u\r\n", sent_messages);
-
-    while(1) {
-        
-        printf("ROTINA LORA");
-
-        char *destination = (char*)malloc(132*sizeof(char));
-        ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
-
-
-        printf(".");
-        printf("\r\n\n\n\n\n\nDestination: %s\r\n\n\n\n\n\n\n\n\n", destination);
-
-        /* Try to send the message */
-        uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 132);
-        if (ret != SEMTECH_LORAMAC_TX_DONE)  {
-            printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
-        }
-
-        free(destination);
-
-        //delay_n_second(3);
-
-        puts("FIM ROTINA LORA");
-
-//        ztimer_sleep(ZTIMER_SEC, 5);
-    }
-
     (void)arg;
+
     msg_t msg;
     msg_t msg_queue[8];
     msg_init_queue(msg_queue, 8);
@@ -240,11 +206,7 @@ static void *gps_handler(void *arg)
     int pos = 0;
     char line[MINMEA_MAX_LENGTH];
 
-    /** 
-    * Char arrays that gets GPS desired data and sends with lora. 
-    */
-    char *gps_readings = (char*)malloc(132*sizeof(char));   
-    char *gps_sender = (char*)malloc(132*sizeof(char));
+    
 
     while (1) {
 
@@ -276,15 +238,22 @@ static void *gps_handler(void *arg)
 
                     case MINMEA_SENTENCE_RMC: {
 
-                        puts("Caso RMC\r\n");
+                        //puts("Caso RMC\r\n");
 
                         struct minmea_sentence_rmc frame;
                         struct timespec time; 
+
                         if (minmea_parse_rmc(&frame, line)) {    
                             printf("$RMC floating point degree coordinates and speed: (%f,%f) %f\r\n",
                                     minmea_tocoord(&frame.latitude),
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
+
+                            /** 
+                            * Char arrays that gets GPS desired data and sends with lora. 
+                            */
+                            char *gps_readings = (char*)malloc(132*sizeof(char));   
+                            char *gps_sender = (char*)malloc(132*sizeof(char));
 
                             /* Gets gps readings */
                             float lat = minmea_tocoord(&frame.latitude);
@@ -296,7 +265,7 @@ static void *gps_handler(void *arg)
                                 lon = -90;
                             }    
 
-                            /* 33 is for all the algarisms, ponctuations (-,;+ etc.) and the null char */
+                            /* 132 is for all the algarisms, ponctuations (-,;+ ...) and the null character */
                             int ret = snprintf(gps_readings,132,"%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec,
                                               lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec);
                             if (ret < 0) {
@@ -331,7 +300,7 @@ static void *gps_handler(void *arg)
 
                     case MINMEA_SENTENCE_GGA: {
 
-                        puts("Caso GGA\r\n");
+                        //puts("Caso GGA\r\n");
 
                         struct minmea_sentence_gga frame;
                         if (minmea_parse_gga(&frame, line)) {
@@ -341,7 +310,7 @@ static void *gps_handler(void *arg)
 
                     case MINMEA_SENTENCE_GSV: {
 
-                        puts("Caso GSV\r\n");
+                        //puts("Caso GSV\r\n");
 
                         struct minmea_sentence_gsv frame;
                         if (minmea_parse_gsv(&frame, line)) {
@@ -357,7 +326,7 @@ static void *gps_handler(void *arg)
                     }break;                    
                     
                     default : {
-                        //printf("Nenhum caso. CASE: %d\r\n", (int) minmea_sentence_id(line, false));
+                        printf("Nenhum caso! \r\n");
                     } break;
                 }
             }
@@ -376,18 +345,19 @@ int init_gps(void)
 {
 
     /* Initialize UART */
+    int dev = 1;
     uint32_t baud = 9600;
 
-    int res = uart_init(UART_DEV(dev_gps), baud, rx_cb, (void *)dev_gps);
+    int res = uart_init(UART_DEV(dev), baud, rx_cb, (void *)dev);
     if (res != UART_OK) {
         puts("Error: Unable to initialize UART device");
         return 1;
     }
-    printf("Success: Initialized UART_DEV(%i) at BAUD %"PRIu32"\n", dev_gps, baud);
+    printf("Success: Initialized UART_DEV(%i) at BAUD %"PRIu32"\n", dev, baud);
 
     /* Tell gps chip to wake up */
-    uart_write(UART_DEV(dev_gps), (uint8_t *)PMTK_SET_NMEA_OUTPUT_RMC, strlen(PMTK_SET_NMEA_OUTPUT_RMC));
-    uart_write(UART_DEV(dev_gps), (uint8_t *)PMTK_SET_UPDATE_F_2HZ, strlen(PMTK_SET_UPDATE_F_2HZ));
+    uart_write(UART_DEV(dev), (uint8_t *)PMTK_SET_NMEA_OUTPUT_RMC, strlen(PMTK_SET_NMEA_OUTPUT_RMC));
+    uart_write(UART_DEV(dev), (uint8_t *)PMTK_SET_UPDATE_F_2HZ, strlen(PMTK_SET_UPDATE_F_2HZ));
     puts("GPS Started.");
     return 0;
 }
@@ -404,11 +374,13 @@ int main(void) {
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
 
     /* Initialize lora ringbuffer */
-    //ringbuffer_init(&(ctx_lora.rx_buf), ctx_lora.rx_mem, LORAWAN_BUFSIZE);
+    ringbuffer_init(&(ctx_lora.rx_buf), ctx_lora.rx_mem, LORAWAN_BUFSIZE);
 
     init_gps();
     
     /* Start the gps_handler thread */
+    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack), GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
+
     
 
     puts("LoRaWAN Class A low-power application");
@@ -453,17 +425,16 @@ int main(void) {
 
      /* Start new threads here */
     
-    gps_handler_pid = thread_create(gps_handler_stack, sizeof(gps_handler_stack), GPS_HANDLER_PRIO, 0, gps_handler, NULL, "gps_handler");
+    
+    
+    sender_pid = thread_create(sender_stack, sizeof(sender_stack), SENDER_PRIO, 0, sender, NULL, "sender");
+
+
 
     
-    //sender_pid = thread_create(sender_stack, sizeof(sender_stack), SENDER_PRIO, 0, sender, NULL, "sender");
 
-
-
-    
-
-    //msg_t msg;
-    //msg_send(&msg, sender_pid);
+    msg_t msg;
+    msg_send(&msg, sender_pid);
 
     //msg_t msg_s;
     //msg_send(&msg_s, sender_pid); 
@@ -474,36 +445,36 @@ int main(void) {
 
     //gpio_toggle(GPIO_PIN(1,15));
 
-    while(1) {
-
-        unsigned long long int count = 48000000 * 20; // clock * seconds
-
-        while(count > 0) {
-            count--;
-        }
-
-        printf("ROTINA LORA");
-
-        char *destination = (char*)malloc(132*sizeof(char));
-        ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
-
-
-        printf(".");
-        printf("\r\n\n\n\n\n\nDestination: %s\r\n\n\n\n\n\n\n\n\n", destination);
-
-        /* Try to send the message */
-        uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 132);
-        if (ret != SEMTECH_LORAMAC_TX_DONE)  {
-            printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
-        }
-
-        free(destination);
-
-        //delay_n_second(3);
-
-        puts("FIM ROTINA LORA");   
-
-    }
+//    while(1) {
+//
+//        unsigned long long int count = 48000000 * 20; // clock * seconds
+//
+//        while(count > 0) {
+//            count--;
+//        }
+//
+//        printf("ROTINA LORA");
+//
+//        char *destination = (char*)malloc(132*sizeof(char));
+//        ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
+//
+//
+//        printf(".");
+//        printf("\r\n\n\n\n\n\nDestination: %s\r\n\n\n\n\n\n\n\n\n", destination);
+//
+//        /* Try to send the message */
+//        uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), 132);
+//        if (ret != SEMTECH_LORAMAC_TX_DONE)  {
+//            printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
+//        }
+//
+//        free(destination);
+//
+//        //delay_n_second(3);
+//
+//        puts("FIM ROTINA LORA");   
+//
+//    }
 
     return 0;
 }
