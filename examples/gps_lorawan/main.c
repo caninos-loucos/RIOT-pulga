@@ -53,7 +53,7 @@
 
 #include "ringbuffer.h"
 #include "periph/uart.h"
-#include "minmea.h"
+#include "include/minmea.c"
 
 #include "ztimer.h"
 #include "shell.h"
@@ -63,6 +63,12 @@
 #define PMTK_CMD_WARM_START         "$PMTK102*31\r\n" 
 #define PMTK_CMD_COLD_START         "$PMTK103*30\r\n"
 #define PMTK_CMD_FULL_COLD_START    "$PMTK104*37\r\n"
+
+
+// Era pra ser importado do pkg. Ver isso depois
+#ifndef MINMEA_MAX_SENTENCE_LENGTH
+#define MINMEA_MAX_SENTENCE_LENGTH 80
+#endif
 
 /**
 *   GPS thread priority.
@@ -184,6 +190,27 @@ void rx_cb(void *arg, uint8_t data)
     }
 }
 
+static void fix_minmea_sentence(char *line) {
+    
+    // Line must not be null
+    if (line == NULL) 
+        return;
+
+    // Runs the string until a terminator char is found or it reaches its end '\n'
+    while (*line != '\0') {
+        if (*line == '\n') {
+            // Substitues all values after '\n' for '\0'
+            line++;
+            while (*line != '\0') {
+                *line = '\0';
+                line++;
+            }
+            return;
+        }
+        line++;
+    }
+}
+
 static void *gps_handler(void *arg)
 {
     (void)arg;
@@ -192,7 +219,7 @@ static void *gps_handler(void *arg)
     msg_init_queue(msg_queue, 8);
 
     int pos = 0;
-    char line[MINMEA_MAX_LENGTH];  
+    char line[MINMEA_MAX_SENTENCE_LENGTH];  // char line[MINMEA_MAX_SENTENCE_LENGTH];
 
     while (1) {
 
@@ -207,6 +234,12 @@ static void *gps_handler(void *arg)
 
                 line[pos++] = c;
 		        pos = 0;
+                
+                printf("LINE ANTES: %s\r\n", line);
+
+                fix_minmea_sentence(line); 
+
+                printf("LINE DEPOIS: %s\r\n", line);           
 
                 switch (minmea_sentence_id(line, false)) {
 
@@ -283,7 +316,7 @@ static void *gps_handler(void *arg)
                     }break;                    
                     
                     default : {
-                        puts("Could not parse any message.\r\n");
+                        printf("Could not parse any message!\r\n");
                     } break;
                 }
             }

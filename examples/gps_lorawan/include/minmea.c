@@ -350,12 +350,16 @@ bool minmea_talker_id(char talker[3], const char *sentence)
 
 enum minmea_sentence_id minmea_sentence_id(const char *sentence, bool strict)
 {
-    if (!minmea_check(sentence, strict))
+    if (!minmea_check(sentence, strict)) {
+        puts("CHECKSUM IS WRONG \r\t");
         return MINMEA_INVALID;
+    }
 
     char type[6];
-    if (!minmea_scan(sentence, "t", type))
+    if (!minmea_scan(sentence, "t", type)) {
+        puts("SCAN WENT WRONG \r\t");
         return MINMEA_INVALID;
+    }
 
     if (!strcmp(type+2, "GBS"))
         return MINMEA_SENTENCE_GBS;

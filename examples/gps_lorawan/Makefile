@@ -13,7 +13,7 @@ FEATURES_REQUIRED += periph_uart
 USEMODULE += event_timeout_ztimer
 
 # MINMEA important features
-USEPKG += minmea
+#USEPKG += minmea
 USEMODULE += ps
 USEMODULE += xtimer
 
