@@ -60,9 +60,21 @@
 
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
-#define PMTK_CMD_WARM_START         "$PMTK102*31\r\n" 
-#define PMTK_CMD_COLD_START         "$PMTK103*30\r\n"
-#define PMTK_CMD_FULL_COLD_START    "$PMTK104*37\r\n"
+
+//Constantes
+
+char HDR = 0x10;
+char DEVID[5] = {0x00,0x00,0x00,0x00,0x00};
+char DEFAULT = 0x00;
+char DATETIME[6] = {0x18,0x02,0x09,0x13,0x25,0x02};
+char LATITUDE[4] = {0x16,0x94,0x95,0x75}; 
+char LONGITUDE[4] = {0x2b,0x19,0x18,0x00};
+char SPEED[3] = {0x00,0x00,0x00};
+
+//char p_datetime[8];
+//p_datetime = (char *)&DATETIME;
+
+
 
 
 // Era pra ser importado do pkg. Ver isso depois
@@ -86,7 +98,7 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 *   It stores latitude, longitude and timestamp (Epoch) 4 times. 
 */
 #ifndef LORAWAN_BUFSIZE
-#define LORAWAN_BUFSIZE        (132U) 
+#define LORAWAN_BUFSIZE        (53U) 
 #endif
 
 /** 
@@ -136,8 +148,8 @@ static void _prepare_next_alarm(void) {
 
 static void _send_message(void) {
 
-    char *destination = (char*)malloc(132*sizeof(char));
-    ringbuffer_get(&(ctx_lora.rx_buf), destination, 132);
+    char *destination = (char*)malloc(53*sizeof(char));
+    ringbuffer_get(&(ctx_lora.rx_buf), destination, 53);
 
     /* Try to send the message */
     uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), strlen(destination));
@@ -211,6 +223,103 @@ static void fix_minmea_sentence(char *line) {
     }
 }
 
+/**
+*   Writes date, time, speed and additonal data into desired ringbuffer
+*/
+static void store_data(struct minmea_sentence_rmc *frame, struct tm *time, lora_ctx_t *ring) { //struct minmea_sentence_rmc *frame, struct tm *time, lora_ctx_t *ring
+    //int j;
+    //char p_datetime[8];
+    //p_datetime = (char*)DATETIME;
+    
+
+    /* Char arrays used to store desired GPS data */
+    char *temp = (char*)malloc(53*sizeof(char));   
+    char *package = (char*)malloc(53*sizeof(char));
+
+    /* Gets gps readings */
+    float lat = minmea_tocoord(&(*frame).latitude);
+    float lon = minmea_tocoord(&(*frame).longitude);
+    //minmea_getdatetime(&(*time), &((*frame).date), &((*frame).time));  
+
+    (void) time;  
+
+    /* Guarantees a value nan cannnot be writen */
+    if(isnan(lat) && isnan(lon)) {
+        lat = -90;
+        lon = -90;
+    }    
+
+    //printf("HDR: %x \r\n", HDR);
+    //printf("DEVID: %010lx \r\n", DEVID);
+    //printf("DEFAULT: %02x \r\n", DEFAULT);
+    //printf("DATETIME: %12lx \r\n", DATETIME);
+    
+    for (uint8_t j=0; j<(strlen(DATETIME)); j++)
+        printf("%02X", DATETIME[j]);
+        
+    //printf("LATITUDE: %08lx \r\n", LATITUDE);
+    //printf("LONGITUDE: %08lx \r\n", LONGITUDE);
+    //printf("SPEED: %06lx \r\n", SPEED);
+
+    /* 53 is for all the algarisms, ponctuations (-,;+ ...) and the null character */
+
+    size_t TESTE_SIZE = 7;
+    char *teste = (char*)malloc(TESTE_SIZE*sizeof(char));
+
+    //int ret; 
+    //snprintf(temp, 53, "%02x", HDR);
+    //for (size_t i=0; i<4; i++)
+    //    snprintf(temp, 53, "%02x", DEVID[i]);
+    //snprintf(temp, 7, "%02x%02x%02x", DEFAULT, DEFAULT, DEFAULT);
+
+    size_t index = 0;
+    teste[index] = HDR; index++;
+    for (size_t j=0; j<sizeof(DATETIME); j++)
+        teste[j] = DATETIME[j];
+
+
+    //for (size_t i=0; i<3; i++)
+    //    snprintf(temp, 53, "%02x", LATITUDE[i]);
+    //for (size_t i=0; i<3; i++)
+    //    snprintf(temp, 53, "%02x", LONGITUDE[i]);
+    //for (size_t i=0; i<2; i++)
+    //    snprintf(temp, 53, "%02x", SPEED[i]);
+
+    //int ret = snprintf(temp,53,"%02x%10s%02x%02x%02x%12s%8s%8s%6s", HDR, DEVID, DEFAULT, DEFAULT, DEFAULT, DATETIME, LATITUDE,
+    //                    LONGITUDE, SPEED); 
+
+    //if (ret < 0) {
+    //    puts("Cannot get gps data");
+    //    return;
+    //}
+
+    //printf("SIZE TESTE: %d\r\n", sizeof(teste));
+
+    printf("String final: ");
+    for (size_t i=0; i<TESTE_SIZE; i++)
+        printf("%02x", teste[i]);
+
+    
+
+
+
+    /* Strcpy is necessary to add the null character in the end of array */
+    strcpy(package, temp);
+
+    /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
+    uint16_t i;
+    for(i = 0; i <= strlen(package); i++) {
+        ringbuffer_add_one(&(*ring).rx_buf, package[i]);
+    }
+    
+    free(teste);
+    
+    free(temp);
+    free(package);  
+
+    puts("Data stored =)\r\n");                       
+}
+
 static void *gps_handler(void *arg)
 {
     (void)arg;
@@ -246,7 +355,7 @@ static void *gps_handler(void *arg)
                     case MINMEA_SENTENCE_RMC: {
 
                         struct minmea_sentence_rmc frame;
-                        struct timespec time; 
+                        struct tm time; 
 
                         if (minmea_parse_rmc(&frame, line)) {    
                             printf("$RMC floating point degree coordinates and speed: (%f,%f) %f\r\n",
@@ -254,41 +363,8 @@ static void *gps_handler(void *arg)
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
 
-                            /* Char arrays used to store desired GPS data */
-                            char *gps_readings = (char*)malloc(132*sizeof(char));   
-                            char *gps_sender = (char*)malloc(132*sizeof(char));
+                            store_data(&frame, &time, &ctx_lora); 
 
-                            /* Gets gps readings */
-                            float lat = minmea_tocoord(&frame.latitude);
-                            float lon = minmea_tocoord(&frame.longitude);
-                            minmea_gettime(&time, &(frame.date), &(frame.time));                                        
-
-                            if(isnan(lat) && isnan(lon)) {
-                                lat = -90;
-                                lon = -90;
-                            }    
-
-                            /* 132 is for all the algarisms, ponctuations (-,;+ ...) and the null character */
-                            int ret = snprintf(gps_readings,132,"%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld;%.6f;%.6f;%ld", lat, lon, (long)time.tv_sec,
-                                              lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec, lat, lon, (long)time.tv_sec);
-                            if (ret < 0) {
-                                puts("Cannot get gps data");
-                                return 0;
-                            }
-
-                            printf("GPS READINGS: %s\r\n", gps_readings);
-
-                            /* Strcpy is necessary to add the null character in the end of array */
-                            strcpy(gps_sender, gps_readings);
-
-                            /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
-                            uint16_t i;
-                            for(i = 0; i <= strlen(gps_sender); i++) {
-                                ringbuffer_add_one(&ctx_lora.rx_buf, gps_sender[i]);
-                            }
-                            
-                            free(gps_readings);
-                            free(gps_sender);
                         } else {
                             puts("Could not parse $RMC message. Possibly incomplete");
                         }
