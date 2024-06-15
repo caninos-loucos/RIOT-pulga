@@ -52,9 +52,9 @@
 
 #include "periph/gpio.h"
 #include "xtimer.h"
-#include "scd30.h"
-#include "scd30_params.h"
-#include "scd30_internal.h"
+#include "drivers/scd30.c"
+#include "drivers/scd30/include/scd30_params.h"
+#include "drivers/scd30/include/scd30_internal.h"
 
 #include <inttypes.h>
 

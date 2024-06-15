@@ -67,6 +67,7 @@ CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
 
 USEMODULE += fmt
 
+
 # Prints float
 USEMODULE += printf_float
 
