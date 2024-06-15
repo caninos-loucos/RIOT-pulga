@@ -29,7 +29,7 @@
 #include "bmx280.h"
 #include "bmx280_internals.h"
 
-#define ENABLE_DEBUG        0
+#define ENABLE_DEBUG        1 //Mudei
 #include "debug.h"
 
 #ifdef BMX280_USE_SPI

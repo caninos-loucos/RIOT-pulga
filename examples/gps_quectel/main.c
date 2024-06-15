@@ -58,9 +58,10 @@ static void *gps_handler(void *arg)
 
         do {
             c = (char)ringbuffer_get_one(&(ctx.rx_buf));
+            //printf("C dentro do do: %d\n", c);
             if (c == '\n') {
                 line[pos++] = c;
-		pos = 0;
+		        pos = 0;
                 //printf("Will parse line of sentence id %d: %s\n", minmea_sentence_id(line, false), line);
                 switch (minmea_sentence_id(line, false)) {
                     case MINMEA_SENTENCE_RMC: {

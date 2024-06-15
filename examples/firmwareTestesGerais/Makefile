@@ -14,6 +14,10 @@ USEMODULE += checksum
 USEMODULE += xtimer
 USEMODULE += si1133
 
+#Solucao caipira
+USEMODULE += scd30
+
+
 # Important settings of BMX280 sensor
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
 CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 

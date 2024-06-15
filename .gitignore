@@ -93,3 +93,7 @@ keys/
 
 # custom clang-tidy flags, also used when using clangd language server
 .clang-tidy
+
+# gps_quectel
+gps_quectel
+
