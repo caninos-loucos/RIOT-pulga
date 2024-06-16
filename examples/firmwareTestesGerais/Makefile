@@ -14,9 +14,8 @@ USEMODULE += checksum
 USEMODULE += xtimer
 USEMODULE += si1133
 
-#Solucao caipira
+# SCD30 (CO2 sensor) driver
 USEMODULE += scd30
-
 
 # Important settings of BMX280 sensor
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)

@@ -52,9 +52,9 @@
 
 #include "periph/gpio.h"
 #include "xtimer.h"
-#include "drivers/scd30.c"
-#include "drivers/scd30/include/scd30_params.h"
-#include "drivers/scd30/include/scd30_internal.h"
+#include "scd30.h"
+#include "scd30_params.h"
+#include "scd30_internal.h"
 
 #include <inttypes.h>
 
@@ -69,12 +69,6 @@
 #include "ringbuffer.h"
 #include "periph/uart.h"
 #include "minmea.h"
-
-// Inlcude do led
-
-#include "led.h" 
-
-//// Fim LED
 
 #define PMTK_SET_NMEA_OUTPUT_RMC    "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"
 #define PMTK_SET_UPDATE_F_2HZ       "$PMTK300,500,0,0,0,0*28\r\n"
@@ -742,19 +736,7 @@ int main(void)
     puts("This test will sample all available ADC lines once every 100ms with\n"
          "a 10-bit resolution and print the sampled results to STDIO\n\n");
 
-    // LED //// Descomentar abaixo para ativar o shell
-
-    //kernel_pid_t led_pid;
-    //run_blink_led(&led_pid);
-    //
-    //char line_buf[SHELL_DEFAULT_BUFSIZE];
-    //shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
-  
-
-
-    //////// FIM LED
-    
-    
+    /* Initialize GPS device */
     init_gps();
     
     /* Initialize ringbuffer */
