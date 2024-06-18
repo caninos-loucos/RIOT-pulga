@@ -646,7 +646,7 @@ static void *gps_handler(void *arg)
     msg_init_queue(msg_queue, 8);
 
     int pos = 0;
-    char line[MINMEA_MAX_SENTENCE_LENGTH];
+    char line[MINMEA_MAX_LENGTH];
 
     while (1) {
         msg_receive(&msg);
