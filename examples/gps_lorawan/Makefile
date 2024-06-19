@@ -37,6 +37,9 @@ LORA_REGION ?= AU915
 # Include the Semtech-loramac package
 USEPKG += semtech-loramac
 
+# Include MINMEA parser
+USEPKG += minmea
+
 # Default serial port
 PORT ?= /dev/ttyUSB0
 
