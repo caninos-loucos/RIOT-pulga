@@ -63,9 +63,6 @@
 #include "board.h"
 #include "periph/adc.h"
 
-#include "shell.h"
-#include "shell_commands.h" 
-
 #include "ringbuffer.h"
 #include "periph/uart.h"
 #include "minmea.h"

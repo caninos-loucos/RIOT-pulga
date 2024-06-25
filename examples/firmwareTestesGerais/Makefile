@@ -36,8 +36,7 @@ USEMODULE += nimble_svc_gap
 USEMODULE += nimble_svc_gatt
 
 # Enable SHELL
-USEMODULE += shell
-USEMODULE += shell_commands
+#USEMODULE += shell
 
 # Use automated advertising
 USEMODULE += nimble_autoadv
