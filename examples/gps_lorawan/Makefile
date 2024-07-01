@@ -38,7 +38,7 @@ LORA_REGION ?= AU915
 USEPKG += semtech-loramac
 
 # Include MINMEA parser
-#USEPKG += minmea
+##USEPKG += minmea
 #USEMODULE += minmea
 
 # Default serial port

@@ -171,10 +171,8 @@ static void _prepare_next_alarm(void) {
 
 static void _send_message(void) {
 
-    //MUDAR 27 PARA UMA CONSTANTE
-
-    char *destination = (char*)malloc((26*2+1)*sizeof(char));
-    ringbuffer_get(&(ctx_lora.rx_buf), destination, 27);
+    char *destination = (char*)malloc(53*sizeof(char));
+    ringbuffer_get(&(ctx_lora.rx_buf), destination, 53);
 
     /* Try to send the message */
     uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), strlen(destination));
@@ -227,6 +225,7 @@ void rx_cb(void *arg, uint8_t data)
     }
 }
 
+/* Fixes the minmea received sentence, excluding possible trash data */
 static void fix_minmea_sentence(char *line) {
     
     // Line must not be null
@@ -248,14 +247,12 @@ static void fix_minmea_sentence(char *line) {
     }
 }
 
-struct tm *tm;
-
 /**
 *   Writes date, time, speed and additonal data into desired ringbuffer
 */
 static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //struct minmea_sentence_rmc *frame, struct tm *time, lora_ctx_t *ring
     
-
+    struct tm *time;
     
     //int j;
     //char p_datetime[8];
@@ -263,18 +260,17 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     
 
     /* Char arrays used to store desired GPS data */
-    size_t TEMP_SIZE = 26*2+1;
-    char *temp = (char*)malloc(TEMP_SIZE*sizeof(char));   
+    char *temp = (char*)malloc(53*sizeof(char));   
 
 
     //char *package = (char*)malloc(53*sizeof(char));
 
     /* Gets latitude, longitude, date, time and speed */
     /* Latitude and longitude in absolute values */
-    float latitude =  fabs(minmea_tocoord(&(*frame).latitude)); 
-    float longitude = fabs(minmea_tocoord(&(*frame).longitude));
+    float latitude =  abs(minmea_tocoord(&(*frame).latitude)); 
+    float longitude = abs(minmea_tocoord(&(*frame).longitude));
     float speed = minmea_tofloat(&(*frame).speed);
-    minmea_getdatetime(tm, &((*frame).date), &((*frame).time));  
+    minmea_getdatetime(time, &((*frame).date), &((*frame).time));  
 
     
 
@@ -282,39 +278,69 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     if(isnan(latitude) && isnan(longitude)) {
         latitude = 90; // -90 before
         longitude = 90; 
-    }    
+    }   
+
+    if (latitude < 0) latitude = -latitude;
+    if (longitude < 0) longitude = -longitude;
+
+    //float latitude =  abs(minmea_tocoord(&(*frame).latitude)); 
+    //float longitude = abs(minmea_tocoord(&(*frame).longitude));
+    //float speed = minmea_tofloat(&(*frame).speed);
+    //minmea_getdatetime(tm, &(frame->date), &(frame->time));  
+
+    
+
+     
 
     /* Conveting data into bytes and desired format */
     for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
-        DEVID[i] = (char) devaddr[i];
+        DEVID[i] = devaddr[i];
+
+    // Printing DEVID
+    printf("DEVID: ");
+    for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
+        printf("%x", DEVID[i]);
+
+    puts("");
+
+    // Printing DEVID from source
+    printf("DEVID(source): ");
+    for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
+        printf("%x", devaddr[i]);
+
+    puts("");
 
     /* Date and time */
-    DATETIME[0] = (char) tm->tm_mday;
-    DATETIME[1] = (char) tm->tm_mon;
-    DATETIME[2] = (char) ((tm->tm_year + 1900) % 100);
-    DATETIME[3] = (char) tm->tm_hour;
-    DATETIME[4] = (char) tm->tm_min;
-    DATETIME[5] = (char) tm->tm_sec; 
+    DATETIME[0] = (char) time->tm_mday;
+    DATETIME[1] = (char) time->tm_mon;
+    DATETIME[2] = (char) ((time->tm_year + 1900) % 100);
+    DATETIME[3] = (char) time->tm_hour;
+    DATETIME[4] = (char) time->tm_min;
+    DATETIME[5] = (char) time->tm_sec; 
 
     /* Latitude */
-    int decimal = (int) floor(latitude);
-    snprintf(&LATITUDE[0], 3, "%d", decimal);
+    float decimal = floor(latitude);
+    snprintf(LATITUDE[0], 2, "%X", decimal);
 
+    printf("latitude2: %f\r\n", latitude);
     latitude = latitude - decimal;
-    latitude = latitude * 1000000;
+    printf("lat3: %f\r\n", latitude);
+    int lat = (int) floor(latitude * 1000000);
+    printf("lat4: %d\r\n", lat);
 
     LATITUDE[3] = (char) ((int)latitude % 100);
-    latitude = (int) latitude % 10000;
+    latitude = (int)latitude % 10000;
     LATITUDE[2] = (char) ((int)latitude % 100);
-    latitude = (int) latitude % 100;
+    latitude = (int)latitude % 100;
     LATITUDE[1] = (char) ((int)latitude % 100);
 
     /* Longitude */
-    decimal = (int) floor(longitude);
-    snprintf(&LONGITUDE[0], 3, "%d", decimal);
+    float decimal = floor(longitude);
+    snprintf(LONGITUDE[0], 2, "%X", decimal);
 
     longitude = longitude - decimal;
     longitude = longitude * 1000000;
+    int lon = (int) floor(longitude);
 
     LONGITUDE[3] = (char) ((int)longitude % 100);
     longitude = (int)longitude % 10000;
@@ -322,27 +348,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     longitude = (int)longitude % 100;
     LONGITUDE[1] = (char) ((int)longitude % 100);
 
-    /* Speed */
-    decimal = (int) fabs(speed);
-    snprintf(&SPEED[0], 3, "%c", (char) decimal);
-
-    speed = speed - decimal;
-    speed = speed * 10000;
-
-    SPEED[2] = (char) ((int)speed % 100);
-    speed = (int)speed % 100;
-    SPEED[1] = (char) ((int)speed % 100);
-
-    /* Final string */
-    snprintf(temp, TEMP_SIZE, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c\n", DEFAULT, DEVID[0],
-        DEVID[1], DEVID[2], DEVID[3], DEFAULT, DEFAULT, DEFAULT, DATETIME[0], DATETIME[1], DATETIME[2],
-        DATETIME[3], DATETIME[4], DATETIME[5], LATITUDE[0], LATITUDE[1], LATITUDE[2], LATITUDE[3],
-        LONGITUDE[0], LONGITUDE[1], LONGITUDE[2], LONGITUDE[3], SPEED[0], SPEED[1], SPEED[2]);
-
-    /* Checking final string */
-    printf("String final: ");
-    for (size_t i = 0; i <= TEMP_SIZE; i++)
-        printf("%d", temp[i]);
+    
 
 
     //printf("HDR: %x \r\n", HDR);
@@ -350,8 +356,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     //printf("DEFAULT: %02x \r\n", DEFAULT);
     //printf("DATETIME: %12lx \r\n", DATETIME);
     
-    //for (uint8_t j=0; j<(strlen(DATETIME)); j++)
-    //    printf("%02X", DATETIME[j]);
+    for (uint8_t j=0; j<(strlen(DATETIME)); j++)
+        printf("%02X", DATETIME[j]);
         
     //printf("LATITUDE: %08lx \r\n", LATITUDE);
     //printf("LONGITUDE: %08lx \r\n", LONGITUDE);
@@ -359,8 +365,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
     /* 53 is for all the algarisms, ponctuations (-,;+ ...) and the null character */
 
-    //size_t TESTE_SIZE = 24;
-    //char *teste = (char*)malloc(TESTE_SIZE*sizeof(char));
+    size_t TESTE_SIZE = 7;
+    char *teste = (char*)malloc(TESTE_SIZE*sizeof(char));
 
     //int ret; 
     //snprintf(temp, 53, "%02x", HDR);
@@ -391,7 +397,10 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
     //printf("SIZE TESTE: %d\r\n", sizeof(teste));
 
-    
+    printf("String final: ");
+    for (size_t i=0; i<TESTE_SIZE; i++)
+        printf("%02x", teste[i]);
+
     
 
 
@@ -403,6 +412,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     for(size_t i = 0; i <= TEMP_SIZE; i++) {
         ringbuffer_add_one(&(*ring).rx_buf, temp[i]);
     }
+    
+    free(teste);
     
     free(temp);
     
@@ -453,6 +464,9 @@ static void *gps_handler(void *arg)
                                     minmea_tocoord(&frame.latitude),
                                     minmea_tocoord(&frame.longitude),
                                     minmea_tofloat(&frame.speed));
+
+                            printf("DATETIME(gps_handler): %d;%d;%d;%d;%d;%d", frame.date.day, frame.date.month, frame.date.year, frame.time.hours, frame.time.minutes,
+                                frame.time.seconds);
 
                             store_data(&frame, &ctx_lora); 
 

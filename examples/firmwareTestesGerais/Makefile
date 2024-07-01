@@ -17,6 +17,9 @@ USEMODULE += si1133
 # SCD30 (CO2 sensor) driver
 USEMODULE += scd30
 
+#GPS Parser
+USEPKG += minmea
+
 # Important settings of BMX280 sensor
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
 CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 
@@ -33,8 +36,7 @@ USEMODULE += nimble_svc_gap
 USEMODULE += nimble_svc_gatt
 
 # Enable SHELL
-USEMODULE += shell
-USEMODULE += shell_commands
+#USEMODULE += shell
 
 # Use automated advertising
 USEMODULE += nimble_autoadv
