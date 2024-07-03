@@ -16,6 +16,7 @@ USEMODULE += si1133
 
 # SCD30 (CO2 sensor) driver
 USEMODULE += scd30
+CFLAGS += -DSCD30_PARAM_I2C_DEV=I2C_DEV\(1\)
 
 #GPS Parser
 USEPKG += minmea

@@ -20,6 +20,10 @@ CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77
 # Some RIOT modules needed for this example
 USEMODULE += event_timeout_ztimer
 
+# SCD30 (CO2 sensor) driver
+USEMODULE += scd30
+CFLAGS += -DSCD30_PARAM_I2C_DEV=I2C_DEV\(1\)
+
 # Include NimBLE
 USEPKG += nimble
 USEMODULE += nimble_svc_gap

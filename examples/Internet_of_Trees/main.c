@@ -264,23 +264,23 @@ static int _devinfo_handler(uint16_t conn_handle, uint16_t attr_handle,
 
     switch (ble_uuid_u16(ctxt->chr->uuid)) {
         case BLE_GATT_CHAR_MANUFACTURER_NAME:
-            puts("[READ] device information service: manufacturer name value");
+            puts("[READ] device information service: manufacturer name value\r");
             str = _manufacturer_name;
             break;
         case BLE_GATT_CHAR_MODEL_NUMBER_STR:
-            puts("[READ] device information service: model number value");
+            puts("[READ] device information service: model number value\r");
             str = _model_number;
             break;
         case BLE_GATT_CHAR_SERIAL_NUMBER_STR:
-            puts("[READ] device information service: serial number value");
+            puts("[READ] device information service: serial number value\r");
             str = _serial_number;
             break;
         case BLE_GATT_CHAR_FW_REV_STR:
-            puts("[READ] device information service: firmware revision value");
+            puts("[READ] device information service: firmware revision value\r");
             str = _fw_ver;
             break;
         case BLE_GATT_CHAR_HW_REV_STR:
-            puts("[READ] device information service: hardware revision value");
+            puts("[READ] device information service: hardware revision value\r");
             str = _hw_ver;
             break;
         default:
@@ -329,13 +329,13 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
 static void _start_updating(void)
 {
     event_timeout_set(&_update_timeout_evt, UPDATE_INTERVAL);
-    puts("[NOTIFY_ENABLED] environmental sensing service");
+    puts("[NOTIFY_ENABLED] environmental sensing service\r");
 }
 
 static void _stop_updating(void)
 {
     event_timeout_clear(&_update_timeout_evt);
-    puts("[NOTIFY_DISABLED] environmental sensing service");
+    puts("[NOTIFY_DISABLED] environmental sensing service\r");
 }
 
 static void _hr_update(event_t *e)
@@ -380,7 +380,7 @@ static int gatt_svr_chr_access_rw_demo(
     uint16_t conn_handle, uint16_t attr_handle,
     struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-    puts("service 'rw demo' callback triggered");
+    puts("service 'rw demo' callback triggered\r");
 
     (void)conn_handle;
     (void)attr_handle;
@@ -394,14 +394,14 @@ static int gatt_svr_chr_access_rw_demo(
     if (ble_uuid_cmp(ctxt->chr->uuid, write_uuid) == 0)
     {
 
-        puts("access to characteristic 'rw demo (write)'");
+        puts("access to characteristic 'rw demo (write)'\r");
         printf("entrou aqui\n");
 
         switch (ctxt->op)
         {
 
         case BLE_GATT_ACCESS_OP_READ_CHR:
-            puts("read from characteristic");
+            puts("read from characteristic\r");
             printf("current value of rm_demo_write_data: '%s'\n \r",
                    rm_demo_write_data);
 
@@ -412,7 +412,7 @@ static int gatt_svr_chr_access_rw_demo(
             break;
 
         case BLE_GATT_ACCESS_OP_WRITE_CHR:
-            puts("write to characteristic");
+            puts("write to characteristic\r");
 
             printf("old value of rm_demo_write_data: '%s'\n \r",
                    rm_demo_write_data);
@@ -432,27 +432,27 @@ static int gatt_svr_chr_access_rw_demo(
             break;
 
         case BLE_GATT_ACCESS_OP_READ_DSC:
-            puts("read from descriptor");
+            puts("read from descriptor\r");
             break;
 
         case BLE_GATT_ACCESS_OP_WRITE_DSC:
-            puts("write to descriptor");
+            puts("write to descriptor\r");
             break;
 
         default:
-            puts("unhandled operation!");
+            puts("unhandled operation!\r");
             rc = 1;
             break;
         }
 
-        puts("");
+        puts("\r");
 
         return rc;
     }
     else if (ble_uuid_cmp(ctxt->chr->uuid, readonly_uuid) == 0)
     {
         printf("ENTROU AQUI\n");
-        puts("access to characteristic 'rw demo (read-only)'");
+        puts("access to characteristic 'rw demo (read-only)'\r");
 
         printf("%d\n", ctxt->op);
 
@@ -482,7 +482,7 @@ static int gatt_svr_chr_access_rw_demo(
             sender_pid = KERNEL_PID_UNDEF;
             // rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
 
-            // puts("");
+            // puts("\r");
 
             // return rc;
         }
@@ -494,14 +494,14 @@ static int gatt_svr_chr_access_rw_demo(
 
             // rc = os_mbuf_append(ctxt->om, &str_answer, strlen(str_answer));
 
-            // puts("");
+            // puts("\r");
 
             // return rc;
         }
         return 0;
     }
 
-    puts("unhandled uuid!");
+    puts("unhandled uuid!\r");
     return 1;
 }
 
@@ -738,7 +738,7 @@ int main(void)
     printf("[test][dev-%d] ASC: %u\n\r", i, value);
     scd30_get_param(&scd30_dev, SCD30_FRC, &value);
     printf("[test][dev-%d] FRC: %u ppm\n\r", i, value);
-    puts("NimBLE Heart Rate Sensor Example");
+    puts("NimBLE Heart Rate Sensor Example\r");
     
     while (i < TEST_ITERATIONS) {
         xtimer_sleep(1);
@@ -768,10 +768,10 @@ int main(void)
 
     switch (bmx280_init(&dev, &bmx280_params[0])) {
         case BMX280_ERR_BUS:
-            puts("[Error] Something went wrong when using the I2C bus");
+            puts("[Error] Something went wrong when using the I2C bus\r");
             return 1;
         case BMX280_ERR_NODEV:
-            puts("[Error] Unable to communicate with any BMX280 device");
+            puts("[Error] Unable to communicate with any BMX280 device\r");
             return 1;
         default:
             /* all good -> do nothing */
@@ -779,8 +779,8 @@ int main(void)
             break;
     }
 
-    puts("LoRaWAN Class A low-power application");
-    puts("=====================================");
+    puts("LoRaWAN Class A low-power application\r");
+    puts("=====================================\r");
 
     /* Convert identifiers and application key */
     fmt_hex_bytes(deveui, CONFIG_LORAMAC_DEV_EUI_DEFAULT);
@@ -812,12 +812,12 @@ int main(void)
     semtech_loramac_set_dr(&loramac, LORAMAC_DR_5);
 
     /* Start the ABP procedure */
-    puts("Starting join procedure");
+    puts("Starting join procedure\r");
     if (semtech_loramac_join(&loramac, LORAMAC_JOIN_ABP) != SEMTECH_LORAMAC_JOIN_SUCCEEDED) {
-        puts("Join procedure failed");
+        puts("Join procedure failed\r");
         return 1;
     }
-    puts("Join procedure succeeded");
+    puts("Join procedure succeeded\r");
 
     /* trigger the first send */
     //msg_t msg;
