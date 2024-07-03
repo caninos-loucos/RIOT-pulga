@@ -12,7 +12,11 @@ FEATURES_REQUIRED += periph_i2c
 FEATURES_REQUIRED += periph_adc
 USEMODULE += checksum
 USEMODULE += xtimer
+
+# SI1133 (UV and Light sensor) driver
 USEMODULE += si1133
+CFLAGS += -DSI1133_PARAM_I2C_DEV=I2C_DEV\(0\)
+CFLAGS += -DSI1133_PARAM_ADDR=0x55
 
 # SCD30 (CO2 sensor) driver
 USEMODULE += scd30
@@ -21,7 +25,7 @@ CFLAGS += -DSCD30_PARAM_I2C_DEV=I2C_DEV\(1\)
 #GPS Parser
 USEPKG += minmea
 
-# Important settings of BMX280 sensor
+# Important settings of BMX280 (umidity, pressure and temperature) sensor
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
 CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77 
 

@@ -1,5 +1,5 @@
 # name of your application
-APPLICATION = nimble_heart_rate_sensor
+APPLICATION = internetOfTrees
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= pulga
@@ -12,8 +12,13 @@ USEMODULE += $(DRIVER)
 FEATURES_REQUIRED += periph_i2c
 USEMODULE += checksum
 USEMODULE += xtimer
-USEMODULE += si1133
 
+# SI1133 (UV and Light sensor) driver
+USEMODULE += si1133
+CFLAGS += -DSI1133_PARAM_I2C_DEV=I2C_DEV\(0\)
+CFLAGS += -DSI1133_PARAM_ADDR=0x55
+
+# BMX280 (umidity, pressure and temperature) driver
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
 CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77
 
