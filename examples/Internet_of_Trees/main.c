@@ -836,9 +836,7 @@ int main(void)
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq, &_update_evt);
 
     /* verify and add our custom services */
-    puts("batata");
     res = ble_gatts_count_cfg(gatt_svr_svcs);
-    puts("cenoura");
     assert(res == 0);
     res = ble_gatts_add_svcs(gatt_svr_svcs);
     assert(res == 0);
