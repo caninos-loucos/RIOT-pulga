@@ -212,7 +212,10 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .access_cb = send_latest_measurements,
                 .val_handle = &_hrs_val_handle,
                 .flags = BLE_GATT_CHR_F_NOTIFY,
-            },  
+            }, 
+            {
+                0, /* No more characteristics in this service */
+            },
         }
     },
     {   /* Service: Read/Write Demo */

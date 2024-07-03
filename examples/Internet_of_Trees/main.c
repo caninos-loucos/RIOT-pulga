@@ -195,6 +195,9 @@ static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
                 .val_handle = &_hrs_val_handle,
                 .flags = BLE_GATT_CHR_F_NOTIFY,
             },  
+            {
+                0, /* No more characteristics in this service */
+            },
         }
     },
     {   /* Service: Read/Write Demo */
@@ -833,7 +836,9 @@ int main(void)
     event_timeout_ztimer_init(&_update_timeout_evt, ZTIMER_MSEC, &_eq, &_update_evt);
 
     /* verify and add our custom services */
+    puts("batata");
     res = ble_gatts_count_cfg(gatt_svr_svcs);
+    puts("cenoura");
     assert(res == 0);
     res = ble_gatts_add_svcs(gatt_svr_svcs);
     assert(res == 0);
@@ -851,7 +856,6 @@ int main(void)
     advp.itvl_min  = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
     
     advp.itvl_max  = BLE_GAP_ADV_FAST_INTERVAL1_MAX;
-
     /* set advertise params */
     nimble_autoadv_set_ble_gap_adv_params(&advp);
 
