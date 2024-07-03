@@ -15,8 +15,7 @@ USEMODULE += xtimer
 USEMODULE += si1133
 
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
-CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x76
-
+CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77
 
 # Some RIOT modules needed for this example
 USEMODULE += event_timeout_ztimer
@@ -58,10 +57,15 @@ USEMODULE += printf_float
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
-DEVELHELP ?= 1
+DEVELHELP ?= 0
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
+
+# Increases stacksize to prevent kernel panic
+CFLAGS += -DTCP_MSL=1000
+CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
+CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
 
 include $(RIOTBASE)/Makefile.include
 
