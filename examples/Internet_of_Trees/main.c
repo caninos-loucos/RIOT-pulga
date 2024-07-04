@@ -467,12 +467,12 @@ static int gatt_svr_chr_access_rw_demo(
 
             printf("ENTROU NA TAREFA LORA\n");     
 
-            sender_pid = thread_create(sender_stack, sizeof(sender_stack),
-                               SENDER_PRIO, 0, sender, NULL, "sender");
+            // sender_pid = thread_create(sender_stack, sizeof(sender_stack),
+            //                    SENDER_PRIO, 0, sender, NULL, "sender");
 
-            //_send_message();
-            msg_t msg;
-            msg_send(&msg, sender_pid); 
+            // //_send_message();
+            // msg_t msg;
+            // msg_send(&msg, sender_pid); 
             
             return rc;
         }
@@ -824,6 +824,11 @@ int main(void)
     //msg_send(&msg, sender_pid);
 
     //char line_buf[SHELL_DEFAULT_BUFSIZE]; shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
+
+    printf("Starting Lora thread\n\r");
+    sender_pid = thread_create(sender_stack, sizeof(sender_stack), SENDER_PRIO, 0, sender, NULL, "sender");
+    msg_t msg;
+    msg_send(&msg, sender_pid); 
 
     printf("Nimble GATT application\n\r");
 
