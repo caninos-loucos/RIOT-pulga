@@ -1,5 +1,5 @@
 # name of your application
-APPLICATION = nimble_heart_rate_sensor
+APPLICATION = internetOfTrees
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= pulga
@@ -12,14 +12,22 @@ USEMODULE += $(DRIVER)
 FEATURES_REQUIRED += periph_i2c
 USEMODULE += checksum
 USEMODULE += xtimer
+
+# SI1133 (UV and Light sensor) driver
 USEMODULE += si1133
+CFLAGS += -DSI1133_PARAM_I2C_DEV=I2C_DEV\(0\)
+CFLAGS += -DSI1133_PARAM_ADDR=0x55
 
+# BMX280 (umidity, pressure and temperature) driver
 CFLAGS += -DBMX280_PARAM_I2C_DEV=I2C_DEV\(0\)
-CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x76
-
+CFLAGS += -DBMX280_PARAM_I2C_ADDR=0x77
 
 # Some RIOT modules needed for this example
 USEMODULE += event_timeout_ztimer
+
+# SCD30 (CO2 sensor) driver
+USEMODULE += scd30
+CFLAGS += -DSCD30_PARAM_I2C_DEV=I2C_DEV\(1\)
 
 # Include NimBLE
 USEPKG += nimble
@@ -58,10 +66,15 @@ USEMODULE += printf_float
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
-DEVELHELP ?= 1
+DEVELHELP ?= 0
 
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
+
+# Increases stacksize to prevent kernel panic
+CFLAGS += -DTCP_MSL=1000
+CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
+CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
 
 include $(RIOTBASE)/Makefile.include
 
