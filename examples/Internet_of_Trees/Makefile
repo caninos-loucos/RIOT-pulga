@@ -71,11 +71,6 @@ DEVELHELP ?= 0
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
-# Increases stacksize to prevent kernel panic
-CFLAGS += -DTCP_MSL=1000
-CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
-CFLAGS += -DMEM_DEBUG=LWIP_DBG_ON
-
 include $(RIOTBASE)/Makefile.include
 
 ifndef CONFIG_KCONFIG_USEMODULE_LORAWAN
