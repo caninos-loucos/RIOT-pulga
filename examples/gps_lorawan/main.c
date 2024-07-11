@@ -63,13 +63,14 @@
 
 //Constantes
 
+#define DEVID_LEN 5U
 #define DATE_TIME_LEN 6U
 #define LATITUDE_LEN 4U
 #define LONGITUDE_LEN 4U
 #define SPEED_LEN 3U
-#define LORA_MSG_LEN 26U 
+#define LORA_MSG_LEN 51U 
 
-// LORA_MSM_LEN eh o total de digitos mais o \n
+// LORA_MSM_LEN eh o total de digitos
 
 
 
@@ -78,13 +79,14 @@
 //const size_t LONGITUDE_LEN = 4;
 //const size_t SPEED_LEN = 3;
 
-char HDR = 0x10;
-char DEVID[LORAMAC_DEVADDR_LEN] = {0x00,0x00,0x00,0x00};
-char DEFAULT = 0x00;
-char DATETIME[DATE_TIME_LEN] = {0x18,0x02,0x09,0x13,0x25,0x02};
-char LATITUDE[LATITUDE_LEN] = {0x16,0x94,0x95,0x75}; 
-char LONGITUDE[LONGITUDE_LEN] = {0x2b,0x19,0x18,0x00};
-char SPEED[SPEED_LEN] = {0x00,0x00,0x00};
+uint8_t HDR = 0x10;
+uint8_t DEVID[DEVID_LEN] = {0x00,0x00,0x00,0x00,0x00};
+uint8_t MODEL[1] = {0x12};
+uint8_t SW_VER[2] = {0x01,0x35};
+uint8_t DATETIME[DATE_TIME_LEN];
+uint8_t LATITUDE[LATITUDE_LEN]; 
+uint8_t LONGITUDE[LONGITUDE_LEN];
+uint8_t SPEED[SPEED_LEN];
 
 //char p_datetime[8];
 //p_datetime = (char *)&DATETIME;
@@ -113,7 +115,7 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 *   It stores latitude, longitude and timestamp (Epoch) 4 times. 
 */
 #ifndef LORAWAN_BUFSIZE
-#define LORAWAN_BUFSIZE        (53U) 
+#define LORAWAN_BUFSIZE        (51U) 
 #endif
 
 /** 
@@ -258,7 +260,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     
 
     /* Char arrays used to store desired GPS data */
-    char *temp = (char*)malloc(LORA_MSG_LEN*sizeof(char));   
+    uint8_t *temp = (uint8_t*)malloc(LORA_MSG_LEN*sizeof(uint8_t));   
 
 
     //char *package = (char*)malloc(53*sizeof(char));
@@ -289,8 +291,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
      
 
     /* Conveting data into bytes and desired format */
-    for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
-        DEVID[i] = devaddr[i];
+    for(size_t i = 0; i < LORAMAC_DEVADDR_LEN && i < DEVID_LEN; i++)
+        DEVID[i] = (devaddr[i]/10)*16 + devaddr[i]%10;
 
     // Printing DEVID
     printf("DEVID: ");
@@ -302,14 +304,14 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     // Printing DEVID from source
     printf("DEVID(source): ");
     for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
-        printf("%x", devaddr[i]);
+        printf("%x", ((devaddr[i]/10)*16 + devaddr[i]%10));
 
     puts("");
 
     /* Date and time */
-    DATETIME[0] = frame->date.day;
+    DATETIME[0] = frame->date.year;
     DATETIME[1] = frame->date.month;
-    DATETIME[2] = frame->date.year;
+    DATETIME[2] = frame->date.day;
     DATETIME[3] = frame->time.hours - 3; // UTC -3
     DATETIME[4] = frame->time.minutes;
     DATETIME[5] = frame->time.seconds; 
@@ -318,58 +320,50 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
     /* Latitude */
     printf("latitude1: %f\r\n", latitude);
-    int decimal = (int) floor(latitude);
-    LATITUDE[0] = decimal;
+    uint8_t lat_int_part = (uint8_t) floor(latitude);
+    LATITUDE[0] = lat_int_part;
     //snprintf(&LATITUDE[0], 3, "%X", (char) decimal);
 
     printf("latitude2: %f\r\n", latitude);
-    latitude = latitude - decimal;
+    latitude = latitude - lat_int_part;
     printf("lat3: %f\r\n", latitude);
-    int lat = (int) floor(latitude * 1000000);
-    printf("lat4: %d\r\n", lat);
+    uint32_t lat = (int) floor(latitude * 1000000);
+    printf("lat4: %ld\r\n", lat);
 
-    LATITUDE[3] =  lat % 100;
-    printf("guardado: %d \r\n", ((int)lat % 100));
-    printf("lat5: %d\r\n", lat);
-    lat = lat / 100;
-    printf("lat6: %d\r\n", lat);
-    LATITUDE[2] =  ((int)lat % 100);
-    printf("guardado: %d \r\n", ((int)lat % 100));
-    printf("lat7: %d\r\n", lat);
-    lat = lat / 100;
-    printf("lat8: %d\r\n", lat);
-    LATITUDE[1] =  ((int)lat % 100);
-    printf("guardado: %d \r\n", ((int)lat % 100));
+    uint8_t aux_lat = lat /10000; // first two decimal digits
+    LATITUDE[1] =  (aux_lat/10)*16 + aux_lat%10;
+    printf("guardado: %02X \r\n", ((aux_lat/10)*16 + aux_lat%10));
+    aux_lat = (lat % 10000) /100; // middle two decimal digits
+    LATITUDE[2] =  (aux_lat/10)*16 + aux_lat%10;
+    printf("guardado: %02X \r\n", ((aux_lat/10)*16 + aux_lat%10));
+    aux_lat = lat % 100; // last two decimal digits
+    LATITUDE[3] =  (aux_lat/10)*16 + aux_lat%10;
+    printf("guardado: %02X \r\n", ((aux_lat/10)*16 + aux_lat%10));
 
     /* Longitude */
-    decimal = (int) floor(longitude);
-    LONGITUDE[0] = decimal;
+    uint8_t lon_int_part = (int) floor(longitude);
+    LONGITUDE[0] = lon_int_part;
     //snprintf(&LONGITUDE[0], 3, "%X", (char) decimal);
 
-    longitude = longitude - decimal;
-    longitude = longitude * 1000000;
-    int lon = (int) floor(longitude);
+    longitude = longitude - lon_int_part;
+    uint32_t lon = (int) floor(longitude * 1000000);
 
-    LONGITUDE[3] =  lon % 100;
-    lon = lon / 100;
-    LONGITUDE[2] =  lon % 100;
-    lon = lon / 100;
-    LONGITUDE[1] =  lon % 100;
+    uint8_t aux_lon = lon /10000; // first two decimal digits
+    LONGITUDE[1] =  (aux_lon/10)*16 + aux_lon%10;
+    aux_lon = (lon % 10000) /100; // middle two decimal digits
+    LONGITUDE[2] =  (aux_lon/10)*16 + aux_lon%10;
+    aux_lon = lon % 100; // last two decimal digits
+    LONGITUDE[3] =  (aux_lon/10)*16 + aux_lon%10;
 
     /* Speed */
-    decimal = (int) floor(speed);
-    SPEED[0] = decimal;
+    uint16_t spd_int_part = (int) floor(speed);
+    SPEED[0] = spd_int_part / 256 ;
+    SPEED[1] = spd_int_part % 256 ;
 
-    speed = speed - decimal;
-    speed = speed * 10000;
-    int speed_int = (int) floor(speed);
+    speed = speed - spd_int_part;
+    uint8_t aux_speed = (int) floor(speed * 100);
 
-    SPEED[2] =  speed_int % 100;
-    speed_int = speed_int / 100;
-    SPEED[1] =  speed_int % 100;
-
-
-    printf("DEFAULT: %02X\r\n", DEFAULT);
+    SPEED[2] =  (aux_speed/10)*16 + aux_speed%10;
 
 
     //printf("HDR: %x \r\n", HDR);
@@ -380,7 +374,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     printf("DATETIME: ");
     
     for (uint8_t j=0; j<DATE_TIME_LEN; j++)
-        printf("%02d;", DATETIME[j]);
+        printf("%02x;", DATETIME[j]);
 
     puts("");
 
@@ -389,7 +383,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     printf("LATITIDE: ");
     printf("%02X;", LATITUDE[0]);
     for (uint8_t j=1; j<LATITUDE_LEN; j++)
-        printf("%02d;", LATITUDE[j]);
+        printf("%02x;", LATITUDE[j]);
 
     puts("");
 
@@ -398,25 +392,30 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     printf("LONGITUDE: ");
     printf("%02X;", LONGITUDE[0]);
     for (uint8_t j=1; j<LONGITUDE_LEN; j++)
-        printf("%02d;", LONGITUDE[j]);
+        printf("%02x;", LONGITUDE[j]);
 
     puts("");
 
     printf("SPEED: ");
     for (uint8_t j=0; j<SPEED_LEN; j++)
-        printf("%02d;", SPEED[j]);
+        printf("%02x;", SPEED[j]);
 
     puts("");
 
-    temp[0] = DEFAULT; 
-    temp[1] = DEVID[0]; temp[2] = DEVID[1]; temp[3] = DEVID[2]; temp[4] = DEVID[3]; 
-    temp[5] = DEFAULT; temp[6] = DEFAULT; temp[7] = DEFAULT;
-    temp[8] = (int) DATETIME[0]; temp[9] = (int) DATETIME[1]; temp[10] = (int) DATETIME[2]; temp[11] = (int) DATETIME[3]; 
-    temp[12] = (int) DATETIME[4]; temp[13] = (int) DATETIME[5]; 
-    temp[14] = LATITUDE[0]; temp[15] = (int) LATITUDE[1]; temp[16] = (int) LATITUDE[2]; temp[17] = (int) LATITUDE[3]; 
-    temp[18] = LONGITUDE[0]; temp[19] = (int) LONGITUDE[1]; temp[20] = (int) LONGITUDE[2]; temp[21] = (int) LONGITUDE[3]; 
-    temp[22] = (int) SPEED[0]; temp[23] = (int) SPEED[1]; temp[24] = (int) SPEED[2]; 
-    temp[25] = '\n';
+    temp[0] = HDR; 
+    temp[1] = DEVID[0]; temp[2] = DEVID[1]; temp[3] = DEVID[2]; temp[4] = DEVID[3]; temp[5] = DEVID[4];
+    temp[6] = MODEL[0]; temp[7] = SW_VER[0]; temp[8] = SW_VER[1];
+    temp[9] = DATETIME[0]; temp[10] = DATETIME[1]; temp[11] = DATETIME[2];
+    temp[12] = DATETIME[3]; temp[13] = DATETIME[4]; temp[14] = DATETIME[5]; 
+    temp[15] = LATITUDE[0]; temp[16] = LATITUDE[1]; temp[17] = LATITUDE[2]; temp[18] = LATITUDE[3];
+    temp[19] = LONGITUDE[0]; temp[20] = LONGITUDE[1]; temp[21] = LONGITUDE[2]; temp[22] = LONGITUDE[3];
+    temp[23] = SPEED[0]; temp[24] = SPEED[1]; temp[25] = SPEED[2];
+
+    for (uint8_t j=26; j<LORA_MSG_LEN; j++)
+        temp[j] = 0x00;
+
+    temp[29] = 0xe9;
+
 
     //snprintf(temp, LORA_MSG_LEN, "%X%X%X%X%X%X%X%X%d%d%d%d%d%d%X%d%d%d%X%d%d%d%d%d%d", DEFAULT, 
     //        DEVID[0],DEVID[1], DEVID[2], DEVID[3], 
@@ -484,8 +483,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     //strcpy(package, temp);
 
     /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
-    uint16_t i;
-    for(i = 0; i <= LORA_MSG_LEN; i++) {
+    for(uint8_t i = 0; i <= LORA_MSG_LEN; i++) {
         ringbuffer_add_one(&(*ring).rx_buf, temp[i]);
     }
     
@@ -521,11 +519,11 @@ static void *gps_handler(void *arg)
                 line[pos++] = c;
 		        pos = 0;
                 
-                printf("LINE ANTES: %s\r\n", line);
+                //printf("LINE ANTES: %s\r\n", line);
 
                 fix_minmea_sentence(line); 
 
-                printf("LINE DEPOIS: %s\r\n", line);           
+                //printf("LINE DEPOIS: %s\r\n", line);           
 
                 switch (minmea_sentence_id(line, false)) {
 
