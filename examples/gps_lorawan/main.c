@@ -88,6 +88,8 @@ uint8_t LATITUDE[LATITUDE_LEN];
 uint8_t LONGITUDE[LONGITUDE_LEN];
 uint8_t SPEED[SPEED_LEN];
 
+uint8_t lora_msg[LORA_MSG_LEN];
+
 //char p_datetime[8];
 //p_datetime = (char *)&DATETIME;
 
@@ -131,11 +133,11 @@ static kernel_pid_t sender_pid;
 static char sender_stack[THREAD_STACKSIZE_MAIN / 2];
 static void *sender(void *arg);
 
-typedef struct {
-    char rx_mem[LORAWAN_BUFSIZE];
-    ringbuffer_t rx_buf;
-} lora_ctx_t;
-static lora_ctx_t ctx_lora;
+//typedef struct {
+//    char rx_mem[LORAWAN_BUFSIZE];
+//    ringbuffer_t rx_buf;
+//} lora_ctx_t;
+//static lora_ctx_t ctx_lora;
 
 semtech_loramac_t loramac;
 static sx127x_t sx127x;
@@ -165,20 +167,20 @@ static void _prepare_next_alarm(void) {
 
 static void _send_message(void) {
 
-    char *destination = (char*)malloc(LORA_MSG_LEN*sizeof(char));
-    ringbuffer_get(&(ctx_lora.rx_buf), destination, LORA_MSG_LEN);
+    //char *lora_msg = (char*)malloc(LORA_MSG_LEN*sizeof(char));
+    //ringbuffer_get(&(ctx_lora.rx_buf), lora_msg, LORA_MSG_LEN);
 
     printf("DESTINATION: \n\n\n\n\r");
     for(size_t i=0; i<LORA_MSG_LEN; i++)
-        printf("%d", destination[i]);
+        printf("%02x", lora_msg[i]);
 
     /* Try to send the message */
-    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), LORA_MSG_LEN);
+    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(lora_msg), LORA_MSG_LEN);
     if (ret != SEMTECH_LORAMAC_TX_DONE)  {
        printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
     }
 
-    free(destination);
+    //free(lora_msg);
 }
 
 static void *sender(void *arg) {
@@ -250,7 +252,7 @@ static void fix_minmea_sentence(char *line) {
 /**
 *   Writes date, time, speed and additonal data into desired ringbuffer
 */
-static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //struct minmea_sentence_rmc *frame, struct tm *time, lora_ctx_t *ring
+static void store_data(struct minmea_sentence_rmc *frame) { //struct minmea_sentence_rmc *frame, struct tm *time, lora_ctx_t *ring
     
     
     
@@ -260,7 +262,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     
 
     /* Char arrays used to store desired GPS data */
-    uint8_t *temp = (uint8_t*)malloc(LORA_MSG_LEN*sizeof(uint8_t));   
+    // +1 for null term
+    //uint8_t *lora_msg = (uint8_t*)malloc((LORA_MSG_LEN+1)*sizeof(uint8_t));   
 
 
     //char *package = (char*)malloc(53*sizeof(char));
@@ -291,8 +294,8 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
      
 
     /* Conveting data into bytes and desired format */
-    for(size_t i = 0; i < LORAMAC_DEVADDR_LEN && i < DEVID_LEN; i++)
-        DEVID[i] = (devaddr[i]/10)*16 + devaddr[i]%10;
+    for(size_t i = 0; i < 4; i++)
+        DEVID[i] = (deveui[i]/10)*16 + devaddr[i]%10;
 
     // Printing DEVID
     printf("DEVID: ");
@@ -304,7 +307,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     // Printing DEVID from source
     printf("DEVID(source): ");
     for(size_t i = 0; i < LORAMAC_DEVADDR_LEN; i++)
-        printf("%x", ((devaddr[i]/10)*16 + devaddr[i]%10));
+        printf("%x", ((deveui[i]/10)*16 + deveui[i]%10));
 
     puts("");
 
@@ -402,22 +405,26 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
     puts("");
 
-    temp[0] = HDR; 
-    temp[1] = DEVID[0]; temp[2] = DEVID[1]; temp[3] = DEVID[2]; temp[4] = DEVID[3]; temp[5] = DEVID[4];
-    temp[6] = MODEL[0]; temp[7] = SW_VER[0]; temp[8] = SW_VER[1];
-    temp[9] = DATETIME[0]; temp[10] = DATETIME[1]; temp[11] = DATETIME[2];
-    temp[12] = DATETIME[3]; temp[13] = DATETIME[4]; temp[14] = DATETIME[5]; 
-    temp[15] = LATITUDE[0]; temp[16] = LATITUDE[1]; temp[17] = LATITUDE[2]; temp[18] = LATITUDE[3];
-    temp[19] = LONGITUDE[0]; temp[20] = LONGITUDE[1]; temp[21] = LONGITUDE[2]; temp[22] = LONGITUDE[3];
-    temp[23] = SPEED[0]; temp[24] = SPEED[1]; temp[25] = SPEED[2];
+    lora_msg[0] = HDR; 
+    lora_msg[1] = DEVID[0]; lora_msg[2] = DEVID[1]; lora_msg[3] = DEVID[2]; lora_msg[4] = DEVID[3]; lora_msg[5] = DEVID[4];
+    lora_msg[6] = MODEL[0]; lora_msg[7] = SW_VER[0]; lora_msg[8] = SW_VER[1];
+    lora_msg[9] = DATETIME[0]; lora_msg[10] = DATETIME[1]; lora_msg[11] = DATETIME[2];
+    lora_msg[12] = DATETIME[3]; lora_msg[13] = DATETIME[4]; lora_msg[14] = DATETIME[5]; 
+    lora_msg[15] = LATITUDE[0]; lora_msg[16] = LATITUDE[1]; lora_msg[17] = LATITUDE[2]; lora_msg[18] = LATITUDE[3];
+    lora_msg[19] = LONGITUDE[0]; lora_msg[20] = LONGITUDE[1]; lora_msg[21] = LONGITUDE[2]; lora_msg[22] = LONGITUDE[3];
+    lora_msg[23] = SPEED[0]; lora_msg[24] = SPEED[1]; lora_msg[25] = SPEED[2];
 
     for (uint8_t j=26; j<LORA_MSG_LEN; j++)
-        temp[j] = 0x00;
+        lora_msg[j] = 0x00;
 
-    temp[29] = 0xe9;
+    lora_msg[29] = 0xe9;
+
+    lora_msg[LORA_MSG_LEN] = '\n';
 
 
-    //snprintf(temp, LORA_MSG_LEN, "%X%X%X%X%X%X%X%X%d%d%d%d%d%d%X%d%d%d%X%d%d%d%d%d%d", DEFAULT, 
+
+
+    //snprintf(lora_msg, LORA_MSG_LEN, "%X%X%X%X%X%X%X%X%d%d%d%d%d%d%X%d%d%d%X%d%d%d%d%d%d", DEFAULT, 
     //        DEVID[0],DEVID[1], DEVID[2], DEVID[3], 
     //        DEFAULT, DEFAULT, DEFAULT, 
     //        (int) DATETIME[0], (int) DATETIME[1], (int) DATETIME[2], (int) DATETIME[3], (int) DATETIME[4], (int) DATETIME[5],
@@ -428,7 +435,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     
     printf("String enviada: ");
     for (size_t j=0; j<LORA_MSG_LEN; j++)
-        printf("%02x;", temp[j]);
+        printf("%02x;", lora_msg[j]);
 
     puts("");
         
@@ -443,10 +450,10 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
     //char *teste = (char*)malloc(TESTE_SIZE*sizeof(char));
 
     //int ret; 
-    //snprintf(temp, 53, "%02x", HDR);
+    //snprintf(lora_msg, 53, "%02x", HDR);
     //for (size_t i=0; i<4; i++)
-    //    snprintf(temp, 53, "%02x", DEVID[i]);
-    //snprintf(temp, 7, "%02x%02x%02x", DEFAULT, DEFAULT, DEFAULT);
+    //    snprintf(lora_msg, 53, "%02x", DEVID[i]);
+    //snprintf(lora_msg, 7, "%02x%02x%02x", DEFAULT, DEFAULT, DEFAULT);
 
     //size_t index = 0;
     //teste[index] = HDR; index++;
@@ -455,13 +462,13 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
 
     //for (size_t i=0; i<3; i++)
-    //    snprintf(temp, 53, "%02x", LATITUDE[i]);
+    //    snprintf(lora_msg, 53, "%02x", LATITUDE[i]);
     //for (size_t i=0; i<3; i++)
-    //    snprintf(temp, 53, "%02x", LONGITUDE[i]);
+    //    snprintf(lora_msg, 53, "%02x", LONGITUDE[i]);
     //for (size_t i=0; i<2; i++)
-    //    snprintf(temp, 53, "%02x", SPEED[i]);
+    //    snprintf(lora_msg, 53, "%02x", SPEED[i]);
 
-    //int ret = snprintf(temp,53,"%02x%10s%02x%02x%02x%12s%8s%8s%6s", HDR, DEVID, DEFAULT, DEFAULT, DEFAULT, DATETIME, LATITUDE,
+    //int ret = snprintf(lora_msg,53,"%02x%10s%02x%02x%02x%12s%8s%8s%6s", HDR, DEVID, DEFAULT, DEFAULT, DEFAULT, DATETIME, LATITUDE,
     //                    LONGITUDE, SPEED); 
 
     //if (ret < 0) {
@@ -480,16 +487,16 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
 
     /* Strcpy is necessary to add the null character in the end of array */
-    //strcpy(package, temp);
+    //strcpy(package, lora_msg);
 
     /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
-    for(uint8_t i = 0; i <= LORA_MSG_LEN; i++) {
-        ringbuffer_add_one(&(*ring).rx_buf, temp[i]);
-    }
+    //for(uint8_t i = 0; i <= LORA_MSG_LEN; i++) {
+    //    ringbuffer_add_one(&(*ring).rx_buf, lora_msg[i]);
+    //}
     
     //free(teste);
     
-    free(temp);
+    //free(lora_msg);
     //free(package);  
 
     puts("Data stored =)\r\n");                       
@@ -540,7 +547,7 @@ static void *gps_handler(void *arg)
                             printf("DATETIME(gps_handler): %d;%d;%d;%d;%d;%d", frame.date.day, frame.date.month, frame.date.year, frame.time.hours, frame.time.minutes,
                                 frame.time.seconds);
 
-                            store_data(&frame, &ctx_lora); 
+                            store_data(&frame); 
 
                         } else {
                             puts("Could not parse $RMC message. Possibly incomplete");
@@ -616,7 +623,7 @@ int main(void) {
     ringbuffer_init(&(ctx.rx_buf), ctx.rx_mem, UART_BUFSIZE);
 
     /* Initialize lora ringbuffer */
-    ringbuffer_init(&(ctx_lora.rx_buf), ctx_lora.rx_mem, LORAWAN_BUFSIZE);
+    //ringbuffer_init(&(ctx_lora.rx_buf), ctx_lora.rx_mem, LORAWAN_BUFSIZE);
 
     init_gps();
     
