@@ -119,7 +119,7 @@ static char gps_handler_stack[THREAD_STACKSIZE_MAIN];
 /** 
 *   Messages are sent every 300s (5 minutes). 20s is te minimum to respect the duty cycle on each channel 
 */
-#define PERIOD_S            (300U)
+#define PERIOD_S            (20U)
 
 /** 
 *   Priority of the Lora thread. Must be lower than the GPS 
@@ -166,12 +166,12 @@ static void _send_message(void) {
     char *destination = (char*)malloc(LORA_MSG_LEN*sizeof(char));
     ringbuffer_get(&(ctx_lora.rx_buf), destination, LORA_MSG_LEN);
 
-    printf("Destination: ");
+    printf("DESTINATION: \n\n\n\n\r");
     for(size_t i=0; i<LORA_MSG_LEN; i++)
         printf("%d", destination[i]);
 
     /* Try to send the message */
-    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), strlen(destination));
+    uint8_t ret = semtech_loramac_send(&loramac,(uint8_t*)(destination), LORA_MSG_LEN);
     if (ret != SEMTECH_LORAMAC_TX_DONE)  {
        printf("Cannot send message '%s', ret code: %d\n\n", message, ret);
     }
@@ -485,7 +485,7 @@ static void store_data(struct minmea_sentence_rmc *frame, lora_ctx_t *ring) { //
 
     /* It has to be done in a for loop to overwrite old data if ringbuffer is full */
     uint16_t i;
-    for(i = 0; i <= strlen(temp); i++) {
+    for(i = 0; i <= LORA_MSG_LEN; i++) {
         ringbuffer_add_one(&(*ring).rx_buf, temp[i]);
     }
     
